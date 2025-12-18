@@ -1,0 +1,543 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<div class="container" style="padding-top: 40px; padding-bottom: 40px;">
+<h1 class="section-title">Личный кабинет</h1>
+
+    <div class="dashboard-container">
+        
+        <div class="dashboard-sidebar">
+            <ul class="sidebar-menu">
+                <li><a onclick="openTab(event, 'profile')" class="tab-link active">Профиль</a></li>
+                {% if is_photographer %}
+                    <li><a onclick="openTab(event, 'bookings')" class="tab-link">Заявки</a></li>
+                    <li><a onclick="openTab(event, 'stats')" class="tab-link">Статистика</a></li>
+                {% else %}
+                    <li><a onclick="openTab(event, 'bookings')" class="tab-link">Мои заказы</a></li>
+                {% endif %}
+                <li><a onclick="openTab(event, 'settings')" class="tab-link">Настройки</a></li>
+                <li><a onclick="openTab(event, 'help')" class="tab-link">Помощь</a></li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <a href="#" onclick="document.getElementById('logout-form').submit(); return false;" class="logout-link">Выйти</a>
+            </div>
+        </div>
+
+      
+        <div class="dashboard-content">
+            
+          
+            <div id="bookings" class="tab-content">
+                <h3 class="section-header">Ваши заявки</h3>
+                
+                {% if is_photographer %}
+                <div class="bookings-section">
+                    <h4>Входящие заявки</h4>
+                    {% for booking in received_active_bookings %}
+                        <div class="booking-card" style="border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fff;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong>От: {{ booking.client.username }}</strong>
+                                <span class="badge badge-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                            </div>
+                            <p style="margin: 10px 0;">{{ booking.message }}</p>
+                            <p><strong>Контакты:</strong> {{ booking.contact_phone }}</p>
+                            <small class="text-muted">{{ booking.created_at|date:"d M Y H:i" }}</small>
+                            
+                            <form method="post" style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                                <select name="status" class="form-control" style="width: auto;">
+                                    <option value="new" {% if booking.status == 'new' %}selected{% endif %}>Новая</option>
+                                    <option value="in_progress" {% if booking.status == 'in_progress' %}selected{% endif %}>В работе</option>
+                                    <option value="completed" {% if booking.status == 'completed' %}selected{% endif %}>Выполнена</option>
+                                    <option value="cancelled" {% if booking.status == 'cancelled' %}selected{% endif %}>Отменена</option>
+                                </select>
+                                <button type="submit" name="update_booking_status" class="btn btn-sm btn-outline-primary">Обновить</button>
+                            </form>
+                            
+                            {% if booking.status != 'cancelled' and booking.status != 'completed' %}
+                            <form method="post" style="margin-top: 10px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                                <button type="submit" name="cancel_booking" class="btn btn-sm btn-danger">Отменить заказ</button>
+                            </form>
+                            {% else %}
+                            <form method="post" style="margin-top: 10px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                                <button type="submit" name="cancel_booking" class="btn btn-sm btn-danger">Удалить</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <p>Новых заявок пока нет.</p>
+                    {% endfor %}
+                </div>
+
+                <div class="bookings-section" style="margin-top: 30px;">
+                    <h4>Выполненные заявки</h4>
+                    {% for booking in received_completed_bookings %}
+                        <div class="booking-card" style="border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #f0fdf4;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong>От: {{ booking.client.username }}</strong>
+                                <span class="badge badge-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                            </div>
+                            <p style="margin: 10px 0;">{{ booking.message }}</p>
+                            <p><strong>Контакты:</strong> {{ booking.contact_phone }}</p>
+                            <small class="text-muted">{{ booking.created_at|date:"d M Y H:i" }}</small>
+                            
+                            <form method="post" style="margin-top: 10px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                                <button type="submit" name="cancel_booking" class="btn btn-sm btn-danger">Удалить</button>
+                            </form>
+                        </div>
+                    {% empty %}
+                        <p>Выполненных заявок пока нет.</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="bookings-section" style="margin-top: 30px;">
+                    <h4>Мои заявки (исходящие)</h4>
+                    {% for booking in sent_active_bookings %}
+                        <div class="booking-card" style="border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fafafa;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <strong>Кому: {{ booking.photographer.user.username }}</strong>
+                                    <p style="margin: 10px 0;">{{ booking.message }}</p>
+                                    <small class="text-muted">{{ booking.created_at|date:"d M Y H:i" }}</small>
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+                                    <span class="badge badge-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                                    {% if booking.status != 'cancelled' and booking.status != 'completed' %}
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                                        <button type="submit" name="cancel_booking" class="btn btn-sm btn-danger">Отменить заказ</button>
+                                    </form>
+                                    {% else %}
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                                        <button type="submit" name="cancel_booking" class="btn btn-sm btn-danger">Удалить</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p>Активных заявок нет.</p>
+                    {% endfor %}
+                </div>
+
+                <div class="bookings-section" style="margin-top: 30px;">
+                    <h4>Выполненные заказы</h4>
+                    {% for booking in sent_completed_bookings %}
+                        <div class="booking-card" style="border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #f0fdf4;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <strong>Кому: {{ booking.photographer.user.username }}</strong>
+                                    <p style="margin: 10px 0;">{{ booking.message }}</p>
+                                    <small class="text-muted">{{ booking.created_at|date:"d M Y H:i" }}</small>
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+                                    <span class="badge badge-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="booking_id" value="{{ booking.id }}">
+                                        <button type="submit" name="cancel_booking" class="btn btn-sm btn-danger">Удалить</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p>Выполненных заказов пока нет.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+           
+            {% if is_photographer %}
+            <div id="stats" class="tab-content">
+                <h3 class="section-header">Статистика</h3>
+                <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div class="stat-card" style="padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;">
+                        <i class="far fa-eye" style="font-size: 2rem; color: #6c757d; margin-bottom: 10px;"></i>
+                        <div style="font-size: 2rem; font-weight: bold;">{{ user.photographerprofile.views_count }}</div>
+                        <div class="text-muted">Просмотров профиля</div>
+                    </div>
+                    <div class="stat-card" style="padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;">
+                        <i class="fas fa-camera" style="font-size: 2rem; color: #6c757d; margin-bottom: 10px;"></i>
+                        <div style="font-size: 2rem; font-weight: bold;">{{ photos.count }}</div>
+                        <div class="text-muted">Загружено фото</div>
+                    </div>
+                     <div class="stat-card" style="padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;">
+                        <i class="fas fa-clipboard-list" style="font-size: 2rem; color: #6c757d; margin-bottom: 10px;"></i>
+                        <div style="font-size: 2rem; font-weight: bold;">{{ received_bookings.count }}</div>
+                        <div class="text-muted">Всего заявок</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+
+            <div id="profile" class="tab-content active">
+                {% if is_photographer %}
+                <div style="margin-bottom: 30px; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+                    <h3>Ваш профиль фотографа</h3>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% for field in p_form %}
+                            {% if field.name != 'profile_image' %}
+                                <div class="form-group">
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    
+                                    {% if field.name == 'price' %}
+                                        <div class="price-input-wrapper">
+                                            {{ field }}
+                                            <span class="price-suffix">RUB / час</span>
+                                        </div>
+                                    {% else %}
+                                        {{ field }}
+                                    {% endif %}
+                                    
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+
+                    
+                        <div class="form-group profile-image-group">
+                            <label>Фото профиля</label>
+                            <div class="profile-image-container">
+                                {% if p_form.instance.profile_image %}
+                                    <div class="current-image" id="currentImageContainer">
+                                        <img src="{{ p_form.instance.profile_image.url }}" alt="Profile Photo" class="dashboard-profile-img">
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="image-actions">
+                                    <input type="file" name="profile_image" id="id_profile_image" class="hidden-file-input" onchange="previewImage(this)">
+                                    <label for="id_profile_image" class="action-link change-link" style="cursor: pointer; display: inline-block; margin-right: 10px;">Изменить</label>
+                                    
+                                    <span id="file-name-display" style="margin-left: 10px; font-size: 0.9rem; color: #666;"></span>
+                                </div>
+                            </div>
+                            {% for error in p_form.profile_image.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="submit" name="update_profile" class="btn btn-primary btn-save-profile">Сохранить профиль</button>
+                    </form>
+                </div>
+
+                <div class="profile-section">
+                    <h3 class="section-header">Ваше портфолио</h3>
+                    
+                    
+                    <div style="margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                        <h4 style="margin-bottom: 15px;">Добавить фото</h4>
+                        <form method="post" enctype="multipart/form-data" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            {% csrf_token %}
+                            <div style="flex: 1;">
+                                {{ photo_form.image }}
+                            </div>
+                            <button type="submit" name="upload_photo" class="btn btn-outline">Загрузить</button>
+                        </form>
+                    </div>
+
+                
+                    <div class="photo-grid" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
+                        {% for photo in photos %}
+                            <div class="photo-item">
+                                <img src="{{ photo.image.url }}" alt="My Photo" style="height: 150px;">
+                                <div class="photo-info" style="padding: 10px; text-align: center;">
+                                    <small style="color: #888; display: block; margin-bottom: 5px;">{{ photo.uploaded_at|date:"d M Y" }}</small>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div style="text-align: center; grid-column: 1/-1; padding: 20px;">
+                                <i class="fas fa-camera" style="font-size: 3rem; color: #ddd; margin-bottom: 20px;"></i>
+                                <p>Вы еще не загрузили фотографий.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                
+                <div style="margin-bottom: 30px; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+                    <h3>Настройки профиля</h3>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% for field in client_form %}
+                            {% if field.name != 'profile_image' %}
+                                <div class="form-group">
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+
+                   
+                        <div class="form-group profile-image-group">
+                            <label>Фото профиля</label>
+                            <div class="profile-image-container">
+                                {% if client_form.instance.profile_image %}
+                                    <div class="current-image" id="currentImageContainer">
+                                        <img src="{{ client_form.instance.profile_image.url }}" alt="Profile Photo" class="dashboard-profile-img">
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="image-actions">
+                                    <input type="file" name="profile_image" id="id_profile_image" class="hidden-file-input" onchange="previewImage(this)">
+                                    <label for="id_profile_image" class="action-link change-link" style="cursor: pointer; display: inline-block; margin-right: 10px;">Изменить</label>
+                                    
+                                    <span id="file-name-display" style="margin-left: 10px; font-size: 0.9rem; color: #666;"></span>
+                                </div>
+                            </div>
+                            {% for error in client_form.profile_image.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="submit" name="update_client_profile" class="btn btn-primary btn-save-profile">Сохранить изменения</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            <div id="settings" class="tab-content">
+                <div class="profile-section">
+                    <h3 class="section-header">Настройки</h3>
+                    
+                    <div class="settings-card">
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            {% for field in password_form %}
+                                <div class="form-group">
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                            <button type="submit" name="change_password" class="btn btn-primary">Обновить пароль</button>
+                        </form>
+                    </div>
+
+                    <div class="settings-card mt-4">
+                        <h4>Уведомления</h4>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="form-check-switch">
+                                <label class="switch">
+                                    <input type="checkbox" name="email_notifications" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="switch-label">Получать уведомления на Email</span>
+                            </div>
+                            <div class="form-check-switch">
+                                <label class="switch">
+                                    <input type="checkbox" name="promo_notifications">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="switch-label">Получать новости и акции</span>
+                            </div>
+                            <button type="submit" name="update_settings" class="btn btn-primary mt-3">Сохранить настройки</button>
+                        </form>
+                    </div>
+
+                    <div class="settings-card mt-4">
+                        <form method="post" onsubmit="return confirm('Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить.');">
+                            {% csrf_token %}
+                            <button type="submit" name="delete_account" class="btn btn-danger">Удалить аккаунт</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+          
+            <div id="help" class="tab-content">
+                <div class="help-layout">
+              
+                    <div class="faq-section">
+                        <h3 class="section-header">Помощь</h3>
+                        
+
+               
+                    <div class="contact-section">
+                        <div class="contact-card">
+                            <h4>Задать вопрос?</h4>
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <textarea name="question" class="form-control" rows="5" placeholder="Опишите проблему" required></textarea>
+                                </div>
+                                <button type="submit" name="send_question" class="btn btn-dark w-100">Задать вопрос</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+          
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove("active");
+            }
+
+          
+            tablinks = document.getElementsByClassName("tab-link");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+
+           
+            document.getElementById(tabName).style.display = "block";
+        
+            setTimeout(() => {
+                document.getElementById(tabName).classList.add("active");
+            }, 10);
+            
+            if (evt) {
+                evt.currentTarget.classList.add("active");
+            }
+        }
+
+  
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tab = urlParams.get('tab');
+            if (tab && document.getElementById(tab)) {
+           
+                const links = document.getElementsByClassName("tab-link");
+                for(let link of links) {
+                    if(link.getAttribute('onclick').includes(tab)) {
+                        link.click();
+                        break;
+                    }
+                }
+            }
+        });
+    </script>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function previewImage(input) {
+        const fileNameDisplay = document.getElementById('file-name-display');
+        if (input.files && input.files[0]) {
+            fileNameDisplay.textContent = input.files[0].name;
+            
+  
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                let imgContainer = document.getElementById('currentImageContainer');
+                if (!imgContainer) {
+                  
+                    const parent = document.querySelector('.profile-image-container');
+                    imgContainer = document.createElement('div');
+                    imgContainer.className = 'current-image';
+                    imgContainer.id = 'currentImageContainer';
+                    const img = document.createElement('img');
+                    img.className = 'dashboard-profile-img';
+                    imgContainer.appendChild(img);
+                    parent.insertBefore(imgContainer, parent.firstChild);
+                }
+                imgContainer.querySelector('img').src = e.target.result;
+                
+                
+                const clearCheckbox = document.getElementById('profile_image-clear_id');
+                if (clearCheckbox) clearCheckbox.checked = false;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function deleteProfileImage(e) {
+        e.preventDefault();
+        if (confirm('Вы уверены, что хотите удалить фото профиля? Это действие необратимо.')) {
+            fetch("{% url 'delete_profile_image' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                   
+                    const imgContainer = document.getElementById('currentImageContainer');
+                    if (imgContainer) {
+                        imgContainer.remove();
+                    }
+           
+                    e.target.remove();
+                    
+            
+                    const fileInput = document.getElementById('id_profile_image');
+                    fileInput.value = '';
+                    document.getElementById('file-name-display').textContent = '';
+                    
+                    alert('Фото профиля успешно удалено.');
+                } else {
+                    alert('Ошибка при удалении фото: ' + (data.message || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при отправке запроса.');
+            });
+        }
+    }
+
+    function toggleAccordion(header) {
+        const item = header.parentElement;
+        const isActive = item.classList.contains('active');
+        
+
+        document.querySelectorAll('.accordion-item').forEach(i => {
+            i.classList.remove('active');
+            const icon = i.querySelector('i');
+            if (icon) icon.className = 'fas fa-plus';
+        });
+
+    
+        if (!isActive) {
+            item.classList.add('active');
+            header.querySelector('i').className = 'fas fa-minus';
+        }
+    }
+</script>
+{% endblock %}

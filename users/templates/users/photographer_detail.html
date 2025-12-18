@@ -1,0 +1,131 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<div class="photographer-detail-page">
+    <!-- Header / Hero Section -->
+    <div class="profile-header-section">
+        <div class="container">
+            <div class="profile-header-content">
+                <div class="profile-avatar-large">
+                    {% if photographer.profile_image %}
+                        <img src="{{ photographer.profile_image.url }}" alt="{{ photographer.user.get_full_name|default:photographer.user.username }}">
+                    {% else %}
+                        <img src="https://ui-avatars.com/api/?name={{ photographer.user.get_full_name|default:photographer.user.username }}&background=e0bbd8&color=fff" alt="Avatar">
+                    {% endif %}
+                </div>
+                <div class="profile-header-info">
+                    <h1 class="profile-name-large">{{ photographer.user.get_full_name|default:photographer.user.username }}</h1>
+                    <p class="profile-intro">{{ photographer.short_intro }}</p>
+                    <div class="profile-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> {{ photographer.city|default:"Город не указан" }}</span>
+                        <span><i class="fas fa-money-bill-wave"></i> {{ photographer.price }} ₽/час</span>
+                        <span><i class="fas fa-globe"></i> {{ photographer.get_language_display }}</span>
+                        <span class="views-count"><i class="far fa-eye"></i> {{ photographer.views_count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container content-container">
+        <div class="profile-grid-layout" {% if user == photographer.user %}style="grid-template-columns: 1fr;"{% endif %}>
+            <!-- Left Column: Bio & Portfolio -->
+            <div class="profile-main-column">
+                {% if photographer.bio and photographer.bio != "Расскажите о себе..." %}
+                <section class="bio-section">
+                    <h3>О себе</h3>
+                    <div class="bio-text">
+                        {{ photographer.bio|linebreaks }}
+                    </div>
+                </section>
+                {% endif %}
+
+                <section class="portfolio-section">
+                    <h3>Портфолио</h3>
+                    <div class="portfolio-masonry">
+                        {% for photo in photographer.photos.all %}
+                            <div class="portfolio-item-large">
+                                <img src="{{ photo.image.url }}" alt="Photo">
+                            </div>
+                        {% empty %}
+                            <div class="no-photos">
+                                <i class="fas fa-camera"></i>
+                                <p>У фотографа пока нет работ.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column: Booking Form -->
+            {% if user != photographer.user %}
+            <div class="profile-sidebar-column">
+                <div class="booking-card-sticky">
+                    <h3>Оставить заявку</h3>
+                    {% if user.is_authenticated %}
+                        <form method="post" class="booking-form-modern">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label>Ваш телефон</label>
+                                {{ booking_form.contact_phone }}
+                                {% for error in booking_form.contact_phone.errors %}
+                                    <div class="text-danger" style="font-size: 0.85rem; margin-top: 5px;">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-group">
+                                <label>Сообщение</label>
+                                {{ booking_form.message }}
+                                {% for error in booking_form.message.errors %}
+                                    <div class="text-danger" style="font-size: 0.85rem; margin-top: 5px;">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <button type="submit" name="submit_booking" class="btn btn-primary btn-block">Отправить заявку</button>
+                        </form>
+                    {% else %}
+                        <div class="login-prompt">
+                            <p>Пожалуйста, <a href="{% url 'login' %}" style="color: var(--primary-color); font-weight: bold;">войдите</a>, чтобы оставить заявку.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const phoneInput = document.getElementById('phone-input');
+        if (!phoneInput) return;
+
+        phoneInput.addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+            
+            if (!x[1]) {
+                e.target.value = '+ 7';
+                return;
+            }
+
+            if (x[1] !== '7') {
+                // If user starts typing with 8 or 9, replace first digit with 7
+                x[1] = '7';
+            }
+
+            e.target.value = '+ ' + x[1] + (x[2] ? ' ' + x[2] : '') + (x[3] ? ' ' + x[3] : '') + (x[4] ? ' ' + x[4] : '') + (x[5] ? ' ' + x[5] : '');
+        });
+
+        // Initialize if empty
+        if (!phoneInput.value) {
+            phoneInput.value = '+ 7 ';
+        }
+        
+        // Handle backspace to prevent deleting the prefix
+        phoneInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && phoneInput.value.length <= 4) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}
+

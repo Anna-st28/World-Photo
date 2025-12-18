@@ -1,0 +1,39 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<div class="gallery-header">
+    <div class="container">
+        <h1 class="section-title">Галерея работ</h1>
+        <p class="header-desc" style="text-align: center; margin: 0 auto 30px;">Вдохновляйтесь лучшими кадрами от наших профессионалов.</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="masonry-grid">
+        {% for photo in photos %}
+            <div class="masonry-item">
+                <div class="photo-card">
+                    <img src="{{ photo.image.url }}" alt="Photo by {{ photo.photographer.user.username }}" class="photo-img">
+                    <div class="photo-overlay">
+                        <div class="photographer-info">
+                            <a href="{% url 'photographer_detail' photo.photographer.pk %}" class="photographer-link">
+                                <div class="avatar-small">
+                                    {% if photo.photographer.profile_image %}
+                                        <img src="{{ photo.photographer.profile_image.url }}" alt="{{ photo.photographer.user.username }}">
+                                    {% else %}
+                                        <img src="https://ui-avatars.com/api/?name={{ photo.photographer.user.username }}&background=random" alt="Avatar">
+                                    {% endif %}
+                                </div>
+                                <span class="photographer-name">{{ photo.photographer.user.username }}</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p style="text-align: center; width: 100%;">Фотографий пока нет. Будьте первыми!</p>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

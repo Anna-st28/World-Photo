@@ -1,0 +1,82 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block content %}
+<section class="hero">
+    <div class="hero-slideshow">
+        <div class="slide active" style="background-image: url({% static 'img/Слайдшоу/1.jpg' %});"></div>
+        <div class="slide" style="background-image: url({% static 'img/Слайдшоу/2.jpg' %});"></div>
+        <div class="slide" style="background-image: url({% static 'img/Слайдшоу/3.jpg' %});"></div>
+        <div class="slide" style="background-image: url({% static 'img/Слайдшоу/4.jpg' %});"></div>
+        <div class="slide" style="background-image: url({% static 'img/Слайдшоу/5.jpg' %});"></div>
+        <div class="slide" style="background-image: url({% static 'img/Слайдшоу/6.jpg' %});"></div>
+    </div>
+    <div class="hero-content">
+        <h1>Найди своего идеального фотографа</h1>
+        <p>Тысячи талантливых специалистов готовы запечатлеть ваши лучшие моменты.</p>
+        
+        <div class="hero-search-container" style="background: white; padding: 20px; border-radius: 8px; max-width: 800px; margin: 30px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            <form action="{% url 'specialists' %}" method="get" class="search-form" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <input type="text" name="city" placeholder="Город (например, Москва)" class="form-control" style="margin-bottom: 0;">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <select name="specialization" class="form-select" style="margin-bottom: 0; height: 100%;">
+                        <option value="any">Любая специализация</option>
+                        {% for value, label in specializations %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary search-btn" style="min-width: 150px;">Найти</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<div class="container">
+    <h2 class="section-title">Лучшие работы недели</h2>
+
+    <div class="masonry-grid">
+        {% for photo in best_photos %}
+            <div class="masonry-item">
+                <div class="photo-card">
+                    <img src="{{ photo.image.url }}" alt="Photo by {{ photo.photographer.user.username }}" class="photo-img">
+                    <div class="photo-overlay">
+                        
+                        <div class="photographer-info">
+                            <a href="{% url 'photographer_detail' photo.photographer.pk %}" class="photographer-link">
+                                <div class="avatar-small">
+                                    {% if photo.photographer.profile_image %}
+                                        <img src="{{ photo.photographer.profile_image.url }}" alt="{{ photo.photographer.user.username }}">
+                                    {% else %}
+                                        <img src="https://ui-avatars.com/api/?name={{ photo.photographer.user.username }}&background=random" alt="Avatar">
+                                    {% endif %}
+                                </div>
+                                <span class="photographer-name">{{ photo.photographer.user.username }}</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p style="text-align: center; width: 100%;">Фотографий пока нет. Станьте первым!</p>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const slides = document.querySelectorAll('.hero-slideshow .slide');
+        let currentSlide = 0;
+        const slideInterval = 10000; // 10 seconds
+
+        function nextSlide() {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }
+
+        setInterval(nextSlide, slideInterval);
+    });
+</script>
+{% endblock %}

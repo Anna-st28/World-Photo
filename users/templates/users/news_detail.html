@@ -1,0 +1,26 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div style="max-width: 800px; margin: 0 auto; padding-top: 20px;">
+        <a href="{% url 'news' %}" class="btn btn-text" style="margin-bottom: 20px; display: inline-block;">
+            <i class="fas fa-arrow-left"></i> Назад к новостям
+        </a>
+
+        <article style="background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <h1 style="margin-bottom: 15px; font-size: 2.5rem; color: #333;">{{ news.title }}</h1>
+            <p style="color: #888; margin-bottom: 30px; font-size: 1rem;">
+                <i class="far fa-calendar-alt"></i> {{ news.created_at|date:"d E Y" }}
+            </p>
+            
+            {% if news.image %}
+                <img src="{{ news.image.url }}" alt="{{ news.title }}" style="width: 100%; max-height: 500px; object-fit: cover; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            {% endif %}
+            
+            <div style="line-height: 1.8; font-size: 1.1rem; color: #444;" class="news-content">
+                {{ news.content|safe }}
+            </div>
+        </article>
+    </div>
+</div>
+{% endblock %}

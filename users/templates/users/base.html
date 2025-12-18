@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+{% load static %}
+{% load user_filters %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Photo | Искусство фотографии</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="{% url 'home' %}" class="logo">
+                    <i class="fas fa-camera-retro"></i> World Photo
+                </a>
+                
+                <ul class="nav-links">
+                    <li><a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">Главная</a></li>
+                    <li><a href="{% url 'specialists' %}" class="{% if 'specialists' in request.path %}active{% endif %}">Специалисты</a></li>
+                    <li><a href="{% url 'news' %}" class="{% if 'news' in request.path %}active{% endif %}">Новости</a></li>
+                    <li><a href="{% url 'gallery' %}" class="{% if 'gallery' in request.path %}active{% endif %}">Галерея</a></li>
+                </ul>
+
+                <div class="auth-buttons">
+                    {% if user.is_authenticated %}
+                        <div class="user-menu">
+                            <button class="user-avatar-btn">
+                                <img src="{{ user|get_avatar_url }}" alt="{{ user.username }}" class="user-avatar-img">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="dropdown-content">
+                                <a href="{% url 'dashboard' %}?tab=profile">Профиль</a>
+                                <a href="{% url 'dashboard' %}?tab=settings">Настройки</a>
+                                <a href="{% url 'dashboard' %}?tab=help">Помощь</a>
+                                <form action="{% url 'logout' %}" method="post" id="logout-form" style="display: none;">
+                                    {% csrf_token %}
+                                </form>
+                                <a href="#" onclick="document.getElementById('logout-form').submit(); return false;">Выйти</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-text">Войти</a>
+                        <a href="{% url 'register' %}" class="btn btn-primary">Регистрация</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-section">
+                <h3>World Photo</h3>
+                <p>Платформа для поиска фотографов и вдохновения.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Навигация</h4>
+                <ul>
+                    <li><a href="{% url 'home' %}">Главная</a></li>
+                    <li><a href="{% url 'specialists' %}">Специалисты</a></li>
+                    <li><a href="{% url 'gallery' %}">Галерея</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Контакты</h4>
+                <p><i class="fas fa-envelope"></i> info@worldphoto.ru</p>
+                <p><i class="fas fa-phone"></i> +7 (999) 000-00-00</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 World Photo. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <div class="toast-notification" id="toast-notification">
+        <div class="toast-success">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="toast-content">
+            <h4>Успешно!</h4>
+            <p id="toast-message"></p>
+        </div>
+    </div>
+
+    {% if messages %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        showToast("{{ message }}");
+                    {% endif %}
+                {% endfor %}
+            });
+
+            function showToast(message) {
+                const toast = document.getElementById('toast-notification');
+                const toastMessage = document.getElementById('toast-message');
+                
+                toastMessage.textContent = message;
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 5000);
+            }
+        </script>
+    {% endif %}
+
+</body>
+</html>

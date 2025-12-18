@@ -1,0 +1,156 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+
+<div id="roleModal" class="modal-overlay active">
+    <div class="modal-content">
+        <a href="/" class="modal-close" title="На главную">&times;</a>
+        <div class="modal-logo">
+            <i class="fas fa-camera-retro"></i> MyPhoto
+        </div>
+        <p class="modal-title">Выберите тип аккаунта</p>
+        
+        <button class="role-btn client" onclick="selectRole('client')">Клиент</button>
+        <button class="role-btn photographer" onclick="selectRole('photographer')">Фотограф</button>
+        
+        <p class="modal-footer" style="margin-top: 30px; font-size: 0.8rem; color: #888; line-height: 1.4;">
+            Создавая аккаунт, вы подтверждаете, что соглашаетесь с <a href="#">правилами сайта</a> и <a href="#">положением о конфиденциальности</a>.
+        </p>
+        
+        <p class="modal-footer" style="margin-top: 20px;">
+            Уже есть аккаунт?<br>
+            <a href="{% url 'login' %}" style="color: var(--primary-color); font-weight: bold; font-size: 0.95rem; display: inline-block; margin-top: 5px;">Войти</a>
+        </p>
+    </div>
+</div>
+
+<div class="auth-wrapper">
+    <div class="auth-card" id="registrationForm" style="display: none; opacity: 0; transition: opacity 0.5s ease;">
+        <h2 class="auth-title">Регистрация <span id="roleTitle"></span></h2>
+        <form method="post">
+            {% csrf_token %}
+            
+      
+            {% for field in form %}
+                <div class="form-group" style="margin-bottom: 15px;">
+                    {% if field.name != 'is_photographer' %}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% endif %}
+                    
+                    {{ field }}
+                    
+                    {% if field.help_text %}
+                        <small style="color: #666; display: block; margin-top: 5px;">{{ field.help_text }}</small>
+                    {% endif %}
+                    
+                    {% for error in field.errors %}
+                        <div class="field-error-text">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Зарегистрироваться</button>
+        </form>
+        <p style="text-align: center; margin-top: 20px; font-size: 0.9rem;">
+            Уже есть аккаунт? <a href="{% url 'login' %}" style="color: var(--primary-color); font-weight: bold;">Войти</a>
+        </p>
+        <p style="text-align: center; margin-top: 10px; font-size: 0.9rem;">
+            <a href="#" onclick="showModal()" style="color: #888;">Вернуться к выбору роли</a>
+        </p>
+    </div>
+</div>
+
+<script>
+    function selectRole(role) {
+        const modal = document.getElementById('roleModal');
+        const formContainer = document.getElementById('registrationForm');
+        const isPhotographerInput = document.getElementById('id_is_photographer');
+        const roleTitle = document.getElementById('roleTitle');
+
+ 
+        modal.classList.remove('active');
+        
+   
+        formContainer.style.display = 'block';
+      
+        void formContainer.offsetWidth;
+        formContainer.style.opacity = '1';
+
+   
+        if (role === 'photographer') {
+            isPhotographerInput.checked = true;
+           
+            isPhotographerInput.value = 'True'; 
+            roleTitle.textContent = "(Фотограф)";
+        } else {
+            isPhotographerInput.checked = false;
+            isPhotographerInput.value = 'False';
+            roleTitle.textContent = "(Клиент)";
+        }
+    }
+
+    function showModal() {
+        const modal = document.getElementById('roleModal');
+        const formContainer = document.getElementById('registrationForm');
+        
+        modal.classList.add('active');
+        formContainer.style.opacity = '0';
+        setTimeout(() => {
+            formContainer.style.display = 'none';
+        }, 300);
+    }
+    
+   
+    const hasErrors = "{{ form.errors|yesno:'true,false' }}" === "true";
+    
+    if (hasErrors) {
+        document.getElementById('roleModal').classList.remove('active');
+        document.getElementById('registrationForm').style.display = 'block';
+        document.getElementById('registrationForm').style.opacity = '1';
+        
+      
+        const isPhotographerInput = document.getElementById('id_is_photographer');
+        if (isPhotographerInput.value === 'True' || isPhotographerInput.value === 'on') {
+             document.getElementById('roleTitle').textContent = "(Фотограф)";
+        } else {
+             document.getElementById('roleTitle').textContent = "(Клиент)";
+        }
+    }
+
+ 
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('id_password');
+        const confirmPasswordInput = document.getElementById('id_confirm_password');
+        const form = document.querySelector('form');
+        
+        if (passwordInput && confirmPasswordInput) {
+            function validatePasswords() {
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+                
+              
+                let errorMsg = confirmPasswordInput.nextElementSibling;
+                if (!errorMsg || !errorMsg.classList.contains('password-error')) {
+                    errorMsg = document.createElement('div');
+                    errorMsg.classList.add('password-error');
+                    errorMsg.style.color = 'red';
+                    errorMsg.style.fontSize = '0.9em';
+                    errorMsg.style.marginTop = '5px';
+                    confirmPasswordInput.parentNode.insertBefore(errorMsg, confirmPasswordInput.nextSibling);
+                }
+                
+                if (confirmPassword && password !== confirmPassword) {
+                    errorMsg.textContent = "Пароли не совпадают";
+                    confirmPasswordInput.style.borderColor = 'red';
+                } else {
+                    errorMsg.textContent = "";
+                    confirmPasswordInput.style.borderColor = '';
+                }
+            }
+
+            passwordInput.addEventListener('input', validatePasswords);
+            confirmPasswordInput.addEventListener('input', validatePasswords);
+        }
+    });
+</script>
+{% endblock %}

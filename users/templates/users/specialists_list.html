@@ -1,0 +1,52 @@
+<div class="specialists-grid">
+    {% for photographer in photographers %}
+    <div class="specialist-card">
+        <div class="card-header-profile">
+            <div class="profile-main">
+                <a href="{% url 'photographer_detail' photographer.pk %}" class="avatar-wrapper">
+                    {% if photographer.profile_image %}
+                        <img src="{{ photographer.profile_image.url }}" alt="{{ photographer.user.get_full_name|default:photographer.user.username }}">
+                    {% else %}
+                        <img src="https://ui-avatars.com/api/?name={{ photographer.user.get_full_name|default:photographer.user.username }}&background=e0bbd8&color=fff" alt="Avatar">
+                    {% endif %}
+                </a>
+                <div class="profile-info">
+                    <h3 class="profile-name">
+                        <a href="{% url 'photographer_detail' photographer.pk %}">{{ photographer.user.get_full_name|default:photographer.user.username }}</a>
+                        <span class="badge-pro">PRO</span>
+                    </h3>
+                    <p class="profile-location"><i class="fas fa-map-marker-alt"></i> {{ photographer.city|default:"Москва" }}</p>
+                    <p class="profile-price">{{ photographer.price }} ₽/час</p>
+                </div>
+            </div>
+      
+        </div>
+        
+        <div class="card-portfolio">
+            <div class="portfolio-grid">
+                {% for photo in photographer.photos.all|slice:":3" %}
+                    <a href="{% url 'photographer_detail' photographer.pk %}" class="portfolio-thumb">
+                        <img src="{{ photo.image.url }}" alt="Portfolio">
+                    </a>
+                {% empty %}
+                    <div class="portfolio-empty">Нет фото</div>
+                    <div class="portfolio-empty"></div>
+                    <div class="portfolio-empty"></div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <div class="stats">
+                <i class="far fa-eye"></i> {{ photographer.views_count|default:0 }}
+            </div>
+            <a href="{% url 'photographer_detail' photographer.pk %}" class="btn btn-sm btn-outline-primary">Подробнее</a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="no-results">
+        <h3>Никого не найдено</h3>
+        <p>Попробуйте изменить параметры поиска.</p>
+    </div>
+    {% endfor %}
+</div>

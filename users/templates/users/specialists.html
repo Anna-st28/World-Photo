@@ -1,0 +1,93 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block content %}
+<!-- Header Section -->
+<div class="specialists-header">
+    <div class="container">
+        <h1 class="page-title">Лучшие фотографы мира</h1>
+        <p class="header-desc mt-3">
+            Глобальный рейтинг лучших фотографов. Откройте для себя искренние истории о любви и найдите своего идеального специалиста.
+        </p>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="filters-section">
+    <div class="container">
+        <form method="GET" action="{% url 'specialists' %}" id="filterForm">
+            <div class="filters-row" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                <div class="filter-item">
+                    <label>Специализация</label>
+                    <select class="form-select" name="specialization" onchange="applyFilters()">
+                        <option value="any">Любая</option>
+                        <option value="wedding" {% if request.GET.specialization == 'wedding' %}selected{% endif %}>Свадьба</option>
+                        <option value="portrait" {% if request.GET.specialization == 'portrait' %}selected{% endif %}>Портрет</option>
+                        <option value="reportage" {% if request.GET.specialization == 'reportage' %}selected{% endif %}>Репортаж</option>
+                        <option value="lovestory" {% if request.GET.specialization == 'lovestory' %}selected{% endif %}>Love Story</option>
+                        <option value="fashion" {% if request.GET.specialization == 'fashion' %}selected{% endif %}>Fashion</option>
+                    </select>
+                </div>
+                
+                <div class="filter-item">
+                    <label>Город</label>
+                    <input type="text" name="city" class="form-control" placeholder="Город..." value="{{ request.GET.city|default:'' }}" oninput="debounceFilter()">
+                </div>
+
+                <div class="filter-item" style="max-width: 100px;">
+                    <label>Цена от</label>
+                    <input type="number" name="price_min" class="form-control" placeholder="0" value="{{ request.GET.price_min|default:'' }}" oninput="debounceFilter()">
+                </div>
+
+                <div class="filter-item" style="max-width: 100px;">
+                    <label>до</label>
+                    <input type="number" name="price_max" class="form-control" placeholder="Max" value="{{ request.GET.price_max|default:'' }}" oninput="debounceFilter()">
+                </div>
+
+                <div class="filter-item">
+                    <label>Язык</label>
+                    <select class="form-select" name="language" onchange="applyFilters()">
+                        <option value="any">Любой</option>
+                        <option value="ru" {% if request.GET.language == 'ru' %}selected{% endif %}>Русский</option>
+                        <option value="en" {% if request.GET.language == 'en' %}selected{% endif %}>English</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Specialists List -->
+<div class="container" style="padding-top: 20px;">
+    <div class="specialists-list" id="specialistsContainer">
+        {% include 'users/specialists_list.html' %}
+    </div>
+</div>
+
+<script>
+    let debounceTimer;
+    
+    function debounceFilter() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyFilters, 500);
+    }
+
+    function applyFilters() {
+        const form = document.getElementById('filterForm');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+
+        window.history.pushState({}, '', '?' + params.toString());
+
+        fetch('{% url "specialists" %}?' + params.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('specialistsContainer').innerHTML = data.html;
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+{% endblock %}

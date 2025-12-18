@@ -1,0 +1,34 @@
+{% extends 'users/base.html' %}
+
+{% block content %}
+<div class="container">
+<h1 class="section-title">Новости мира фото</h1>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    {% for news in news_items %}
+        <article style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 30px;">
+            <h2 style="margin-bottom: 10px;">
+                <a href="{% url 'news_detail' news.pk %}" style="text-decoration: none; color: inherit; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='inherit'">
+                    {{ news.title }}
+                </a>
+            </h2>
+            <p style="color: #888; margin-bottom: 20px; font-size: 0.9rem;"><i class="far fa-calendar-alt"></i> {{ news.created_at|date:"d E Y" }}</p>
+            
+            {% if news.image %}
+                <a href="{% url 'news_detail' news.pk %}">
+                    <img src="{{ news.image.url }}" style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 8px; margin-bottom: 20px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                </a>
+            {% endif %}
+            
+            <div style="line-height: 1.8; margin-bottom: 20px;">
+                {{ news.content|striptags|truncatewords:50 }}
+            </div>
+            
+            <a href="{% url 'news_detail' news.pk %}" class="btn btn-primary">Читать далее</a>
+        </article>
+    {% empty %}
+        <p style="text-align: center;">Новостей пока нет.</p>
+    {% endfor %}
+</div>
+</div>
+{% endblock %}
