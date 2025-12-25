@@ -3,7 +3,6 @@ from users.models import PhotographerProfile, ClientProfile
 
 register = template.Library()
 
-
 @register.filter
 def get_avatar_url(user):
     # Check for photographer profile

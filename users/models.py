@@ -5,7 +5,6 @@ from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import sys
 
-
 def compress_image(image_field, quality=70, max_width=1920):
     if not image_field:
         return image_field
@@ -15,7 +14,8 @@ def compress_image(image_field, quality=70, max_width=1920):
         
         if img.mode != 'RGB':
             img = img.convert('RGB')
-
+            
+        # Resize if width > max_width
         if img.width > max_width:
             output_size = (max_width, int(img.height * (max_width / img.width)))
             img.thumbnail(output_size)
@@ -35,7 +35,6 @@ def compress_image(image_field, quality=70, max_width=1920):
     except Exception as e:
         print(f"Error compressing image: {e}")
         return image_field
-
 
 class ClientProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -78,13 +77,28 @@ class PhotographerProfile(models.Model):
     views_count = models.PositiveIntegerField(default=0)
 
     def save(self, *args, **kwargs):
-        if self.profile_image and not self.id:
+        if self.profile_image and not self.id: # Only compress on initial upload or handle update logic carefully
+             # Simple check: if image is being updated. 
+             # Ideally we compare with old instance, but for simplicity in this homework, 
+             # we can just compress. However, compressing already compressed image might degrade quality repeatedly.
+             # Better approach: check if it's a new file.
              pass
-
+             
+        # For simplicity, we will apply compression if it looks like a raw upload (has file path)
+        # In a real app, we'd check if self.pk is None or if 'profile_image' in changed_fields
         if self.profile_image:
+             # This is a bit risky without state tracking, but acceptable for a prototype if we don't save repeatedly.
+             # Actually, let's just do it. The user wants the feature.
+             # To avoid re-compression, we could check a flag or just assume new uploads.
+             # We will try to compress.
              if hasattr(self.profile_image, 'file') and not isinstance(self.profile_image.file, InMemoryUploadedFile):
+                 # It might be a file from disk (management command) or fresh upload
                  pass
-
+             
+             # Let's rely on the fact that forms send InMemoryUploadedFile.
+             # If we just save, we might re-compress.
+             # Safe bet: Compress if no ID (create) or if we implement a check in View.
+             # Let's put the logic here but only if it is an InMemoryUploadedFile (fresh upload).
              if isinstance(self.profile_image.file, InMemoryUploadedFile):
                  self.profile_image = compress_image(self.profile_image, quality=60, max_width=800)
 
@@ -92,7 +106,6 @@ class PhotographerProfile(models.Model):
 
     def __str__(self):
         return self.user.username
-
 
 class Photo(models.Model):
     photographer = models.ForeignKey(PhotographerProfile, on_delete=models.CASCADE, related_name='photos')
@@ -106,7 +119,6 @@ class Photo(models.Model):
 
     def __str__(self):
         return f"Photo by {self.photographer.user.username}"
-
 
 class BookingRequest(models.Model):
     STATUS_CHOICES = [
@@ -131,7 +143,6 @@ class BookingRequest(models.Model):
 
     def __str__(self):
         return f"Booking {self.id} from {self.client.username}"
-
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')

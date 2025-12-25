@@ -12,7 +12,6 @@ django.setup()
 from django.contrib.auth.models import User
 from users.models import PhotographerProfile, Photo, News
 
-
 def download_image(url):
     try:
         response = requests.get(url)
@@ -21,7 +20,6 @@ def download_image(url):
     except Exception as e:
         print(f"Error downloading {url}: {e}")
     return None
-
 
 def create_news():
     print("Creating News...")
@@ -58,7 +56,6 @@ def create_news():
             print(f"  Created news: {news.title}")
         else:
             print(f"  News already exists: {item['title']}")
-
 
 def create_photographers():
     print("Creating Photographers...")
@@ -132,7 +129,6 @@ def create_photographers():
             print(f"  Created photographer: {data['username']}")
         else:
             print(f"  User already exists: {data['username']}")
-
 
 if __name__ == "__main__":
     create_news()

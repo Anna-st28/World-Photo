@@ -20,11 +20,3 @@ pip-delete-this-directory.txt
 .DS_Store
 Thumbs.db
 
-# Django local settings (optional, but good practice)
-# myproject/local_settings.py
-
-# Database (Optional: Uncomment to exclude database)
-# db.sqlite3
-
-# Media (Optional: Uncomment to exclude user uploaded files)
-# media/

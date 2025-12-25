@@ -2,7 +2,6 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import PhotographerProfile, Photo, BookingRequest, ClientProfile
 
-
 class UserRegistrationForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, label="Пароль")
     confirm_password = forms.CharField(widget=forms.PasswordInput, label="Повторите пароль")
@@ -23,7 +22,6 @@ class UserRegistrationForm(forms.ModelForm):
         if password != confirm_password:
             self.add_error('confirm_password', "Пароли не совпадают")
         return cleaned_data
-
 
 class PhotographerProfileForm(forms.ModelForm):
     first_name = forms.CharField(label="Имя", required=False)
@@ -66,14 +64,12 @@ class PhotographerProfileForm(forms.ModelForm):
             user.save()
         return profile
 
-
 class PhotoUploadForm(forms.Form):
     image = forms.ImageField(widget=forms.ClearableFileInput(), label='Загрузить фото')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['image'].widget.attrs.update({'multiple': True})
-
 
 class ClientProfileForm(forms.ModelForm):
     first_name = forms.CharField(label="Имя", required=False)
@@ -109,7 +105,6 @@ class ClientProfileForm(forms.ModelForm):
             user.save()
         return profile
 
-
 class BookingRequestForm(forms.ModelForm):
     class Meta:
         model = BookingRequest
@@ -128,6 +123,7 @@ class BookingRequestForm(forms.ModelForm):
     def clean_contact_phone(self):
         phone = self.cleaned_data.get('contact_phone')
         import re
+        # Expected format: + 7 999 999 99 99
         pattern = re.compile(r'^\+ 7 \d{3} \d{3} \d{2} \d{2}$')
         if not pattern.match(phone):
             raise forms.ValidationError("Введите корректный номер телефона в формате + 7 999 999 99 99")
