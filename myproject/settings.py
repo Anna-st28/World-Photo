@@ -112,13 +112,11 @@ USE_I18N = True
 USE_TZ = True
 
 
+import mimetypes
+mimetypes.add_type("text/css", ".css", True)
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-
-
-import mimetypes
-mimetypes.add_type("text/css", ".css", True)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

@@ -186,7 +186,12 @@
             <div id="profile" class="tab-content active">
                 {% if is_photographer %}
                 <div style="margin-bottom: 30px; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
-                    <h3>Ваш профиль фотографа</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>Ваш профиль фотографа</h3>
+                        <a href="{% url 'photographer_detail' pk=user.photographerprofile.pk %}" class="btn btn-outline-primary" target="_blank">
+                            <i class="fas fa-external-link-alt"></i> Посмотреть публичную страницу
+                        </a>
+                    </div>
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         

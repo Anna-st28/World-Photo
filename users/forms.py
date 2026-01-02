@@ -30,7 +30,7 @@ class PhotographerProfileForm(forms.ModelForm):
 
     class Meta:
         model = PhotographerProfile
-        fields = ['first_name', 'last_name', 'email', 'short_intro', 'bio', 'city', 'specialization', 'price', 'language', 'profile_image']
+        fields = ['first_name', 'last_name', 'email', 'short_intro', 'bio', 'city', 'specialization', 'price', 'language', 'phone_number', 'social_vk', 'social_telegram', 'website', 'profile_image']
         labels = {
             'short_intro': 'Кратко о себе',
             'bio': 'Биография',
@@ -38,12 +38,20 @@ class PhotographerProfileForm(forms.ModelForm):
             'specialization': 'Специализация',
             'price': 'Стоимость часа (RUB)',
             'language': 'Язык',
+            'phone_number': 'Номер телефона',
+            'social_vk': 'ВКонтакте',
+            'social_telegram': 'Telegram',
+            'website': 'Личный сайт',
             'profile_image': 'Фото профиля'
         }
         widgets = {
             'bio': forms.Textarea(attrs={'rows': 4}),
             'short_intro': forms.TextInput(attrs={'placeholder': 'Например: Свадебный фотограф в Москве'}),
             'price': forms.NumberInput(attrs={'class': 'form-control price-input', 'placeholder': '0'}),
+            'phone_number': forms.TextInput(attrs={'placeholder': '+7 (999) 000-00-00'}),
+            'social_vk': forms.URLInput(attrs={'placeholder': 'https://vk.com/...'}),
+            'social_telegram': forms.TextInput(attrs={'placeholder': 'username'}),
+            'website': forms.URLInput(attrs={'placeholder': 'https://mysite.com'}),
         }
 
     def __init__(self, *args, **kwargs):

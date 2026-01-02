@@ -75,6 +75,12 @@ class PhotographerProfile(models.Model):
     
     profile_image = models.ImageField(upload_to='profile_images', blank=True, null=True)
     views_count = models.PositiveIntegerField(default=0)
+    
+    # New fields for contact info
+    phone_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Номер телефона")
+    social_vk = models.URLField(blank=True, null=True, verbose_name="Ссылка на ВКонтакте")
+    social_telegram = models.CharField(max_length=50, blank=True, null=True, verbose_name="Telegram (username)")
+    website = models.URLField(blank=True, null=True, verbose_name="Личный сайт")
 
     def save(self, *args, **kwargs):
         if self.profile_image and not self.id: # Only compress on initial upload or handle update logic carefully

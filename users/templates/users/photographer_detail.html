@@ -22,6 +22,21 @@
                         <span><i class="fas fa-globe"></i> {{ photographer.get_language_display }}</span>
                         <span class="views-count"><i class="far fa-eye"></i> {{ photographer.views_count }}</span>
                     </div>
+
+                    <div class="profile-socials" style="margin-top: 20px; display: flex; gap: 10px;">
+                        {% if photographer.website %}
+                            <a href="{{ photographer.website }}" target="_blank" class="social-btn" title="Сайт"><i class="fas fa-globe"></i></a>
+                        {% endif %}
+                        {% if photographer.social_vk %}
+                            <a href="{{ photographer.social_vk }}" target="_blank" class="social-btn" title="VK"><i class="fab fa-vk"></i></a>
+                        {% endif %}
+                        {% if photographer.social_telegram %}
+                            <a href="https://t.me/{{ photographer.social_telegram|cut:'@' }}" target="_blank" class="social-btn" title="Telegram"><i class="fab fa-telegram"></i></a>
+                        {% endif %}
+                        {% if photographer.phone_number %}
+                            <a href="tel:{{ photographer.phone_number }}" class="social-btn" title="Позвонить"><i class="fas fa-phone"></i></a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -61,6 +76,49 @@
             {% if user != photographer.user %}
             <div class="profile-sidebar-column">
                 <div class="booking-card-sticky">
+                    {% if photographer.phone_number or photographer.website or photographer.social_vk or photographer.social_telegram %}
+                    <div class="contact-section" style="margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px;">
+                        <h3 style="font-size: 1.2rem; margin-bottom: 15px;">Контакты</h3>
+                        <ul class="contact-list" style="list-style: none; padding: 0;">
+                            {% if photographer.phone_number %}
+                            <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; background: rgba(106, 27, 154, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-phone-alt" style="color: var(--primary-color); font-size: 0.9rem;"></i>
+                                </div>
+                                <a href="tel:{{ photographer.phone_number }}" style="color: var(--text-dark); font-weight: 600; font-size: 1.05rem;">{{ photographer.phone_number }}</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% if photographer.website %}
+                            <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; background: rgba(106, 27, 154, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-globe" style="color: var(--primary-color); font-size: 0.9rem;"></i>
+                                </div>
+                                <a href="{{ photographer.website }}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); font-weight: 500;">Личный сайт</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% if photographer.social_vk %}
+                            <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; background: rgba(106, 27, 154, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fab fa-vk" style="color: var(--primary-color); font-size: 0.9rem;"></i>
+                                </div>
+                                <a href="{{ photographer.social_vk }}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); font-weight: 500;">ВКонтакте</a>
+                            </li>
+                            {% endif %}
+
+                            {% if photographer.social_telegram %}
+                            <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; background: rgba(106, 27, 154, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fab fa-telegram" style="color: var(--primary-color); font-size: 0.9rem;"></i>
+                                </div>
+                                <a href="https://t.me/{{ photographer.social_telegram|cut:'@' }}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); font-weight: 500;">Telegram</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
                     <h3>Оставить заявку</h3>
                     {% if user.is_authenticated %}
                         <form method="post" class="booking-form-modern">
