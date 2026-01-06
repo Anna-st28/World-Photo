@@ -2,9 +2,9 @@
    1. Variables & Reset
    ========================================= */
 :root {
-    --primary-color: #6a1b9a;
-    --primary-hover: #4a148c;
-    --secondary-color: #ff4081;
+    --primary-color: #911407;
+    --primary-hover: #911407;
+    --secondary-color: #911407;
     --text-dark: #333333;
     --text-light: #666666;
     --bg-light: #f9f9f9;
@@ -250,13 +250,13 @@ header {
 }
 
 .btn-danger {
-    background-color: #e74c3c;
+    background-color: #911407;
     color: white;
     border: none;
 }
 
 .btn-danger:hover {
-    background-color: #c0392b;
+    background-color: #911407;
     transform: translateY(-2px);
     box-shadow: var(--shadow-sm);
 }
@@ -395,7 +395,7 @@ header {
    7. Footer
    ========================================= */
 .footer {
-    background-color: #2c3e50;
+    background-color: #911407;
     color: #ecf0f1;
     padding: 60px 0 0;
     margin-top: auto;
@@ -465,11 +465,11 @@ header {
 }
 
 .toast-success {
-    border-left-color: #4CAF50;
+    border-left-color: #911407;
 }
 
 .toast-success i {
-    color: #4CAF50;
+    color: #911407;
     font-size: 1.5rem;
 }
 
@@ -891,7 +891,7 @@ header {
    12. Specialists Page Styles
    ========================================= */
 .specialists-header {
-    background: linear-gradient(135deg, #4a148c, #880e4f);
+    background: linear-gradient(135deg, #911407, #911407);
     color: #fff;
     padding: 60px 0;
     text-align: center;
@@ -1001,14 +1001,14 @@ header {
 }
 
 .field-error-text {
-    color: #e74c3c;
+    color: #911407;
     font-size: 0.85rem;
     margin-top: 5px;
 }
 
 .alert-danger {
     background-color: #fdecea;
-    color: #e74c3c;
+    color: #911407;
     padding: 15px;
     border-radius: var(--radius-md);
     margin-bottom: 20px;
@@ -1183,7 +1183,7 @@ header {
 .logout-link {
     display: block;
     padding: 10px 15px;
-    color: #e74c3c;
+    color: #911407;
     font-weight: 500;
     transition: all 0.2s;
 }

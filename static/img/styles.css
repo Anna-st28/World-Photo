@@ -2,9 +2,9 @@
    1. Variables & Reset
    ========================================= */
 :root {
-    --primary-color: #6a1b9a;
-    --primary-hover: #4a148c;
-    --secondary-color: #ff4081;
+    --primary-color: #af82ca;
+    --primary-hover: #af82ca;
+    --secondary-color: #af82ca;
     --text-dark: #333333;
     --text-light: #666666;
     --bg-light: #f9f9f9;
@@ -250,13 +250,13 @@ header {
 }
 
 .btn-danger {
-    background-color: #e74c3c;
+    background-color: #af82ca;
     color: white;
     border: none;
 }
 
 .btn-danger:hover {
-    background-color: #c0392b;
+    background-color: #af82ca;
     transform: translateY(-2px);
     box-shadow: var(--shadow-sm);
 }
@@ -277,7 +277,7 @@ header {
     overflow: hidden;
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
-    border: 1px solid #eee;
+    border: 1px solid #ffffff;
 }
 
 .specialist-card:hover {
@@ -436,7 +436,7 @@ header {
     padding: 20px 0;
     text-align: center;
     font-size: 0.9rem;
-    color: #7f8c8d;
+    color: #af82ca;
 }
 
 /* =========================================
@@ -465,11 +465,11 @@ header {
 }
 
 .toast-success {
-    border-left-color: #4CAF50;
+    border-left-color: #af82ca;
 }
 
 .toast-success i {
-    color: #4CAF50;
+    color: #af82ca;
     font-size: 1.5rem;
 }
 
@@ -1001,14 +1001,14 @@ header {
 }
 
 .field-error-text {
-    color: #e74c3c;
+    color: #af82ca;
     font-size: 0.85rem;
     margin-top: 5px;
 }
 
 .alert-danger {
     background-color: #fdecea;
-    color: #e74c3c;
+    color: #af82ca;
     padding: 15px;
     border-radius: var(--radius-md);
     margin-bottom: 20px;
@@ -1183,7 +1183,7 @@ header {
 .logout-link {
     display: block;
     padding: 10px 15px;
-    color: #e74c3c;
+    color: #911407;
     font-weight: 500;
     transition: all 0.2s;
 }
@@ -1227,10 +1227,10 @@ header {
     font-weight: 600;
 }
 
-.badge-new { background-color: #e3f2fd; color: #1976d2; }
-.badge-in_progress { background-color: #fff3e0; color: #f57c00; }
-.badge-completed { background-color: #e8f5e9; color: #388e3c; }
-.badge-cancelled { background-color: #ffebee; color: #d32f2f; }
+.badge-new { background-color: #e3f2fd; color: #911407; }
+.badge-in_progress { background-color: #fff3e0; color: #911407; }
+.badge-completed { background-color: #e8f5e9; color: #911407; }
+.badge-cancelled { background-color: #ffebee; color: #911407; }
 
 /* Dashboard Profile Image Size */
 .dashboard-profile-img {
