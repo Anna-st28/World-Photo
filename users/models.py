@@ -42,13 +42,25 @@ class ClientProfile(models.Model):
     phone_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Номер телефона")
 
     def save(self, *args, **kwargs):
-        if self.profile_image and isinstance(self.profile_image.file, InMemoryUploadedFile):
-             self.profile_image = compress_image(self.profile_image, quality=60, max_width=800)
+        if self.profile_image:
+            try:
+                if isinstance(self.profile_image.file, InMemoryUploadedFile):
+                     self.profile_image = compress_image(self.profile_image, quality=60, max_width=800)
+            except (FileNotFoundError, ValueError, OSError):
+                pass
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Client: {self.user.username}"
 
+
+SPECIALIZATION_CHOICES = [
+    ('wedding', 'Свадьба'),
+    ('portrait', 'Портрет'),
+    ('reportage', 'Репортаж'),
+    ('lovestory', 'Love Story'),
+    ('fashion', 'Fashion'),
+]
 
 class PhotographerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -56,13 +68,6 @@ class PhotographerProfile(models.Model):
     bio = models.TextField()
     city = models.CharField(max_length=100, blank=True, null=True)
     
-    SPECIALIZATION_CHOICES = [
-        ('wedding', 'Свадьба'),
-        ('portrait', 'Портрет'),
-        ('reportage', 'Репортаж'),
-        ('lovestory', 'Love Story'),
-        ('fashion', 'Fashion'),
-    ]
     specialization = models.CharField(max_length=50, choices=SPECIALIZATION_CHOICES, default='wedding')
     
     price = models.IntegerField(default=0, help_text="Стоимость часа работы в RUB")
@@ -105,22 +110,48 @@ class PhotographerProfile(models.Model):
              # If we just save, we might re-compress.
              # Safe bet: Compress if no ID (create) or if we implement a check in View.
              # Let's put the logic here but only if it is an InMemoryUploadedFile (fresh upload).
-             if isinstance(self.profile_image.file, InMemoryUploadedFile):
-                 self.profile_image = compress_image(self.profile_image, quality=60, max_width=800)
+             if self.profile_image:
+                 try:
+                     if isinstance(self.profile_image.file, InMemoryUploadedFile):
+                         self.profile_image = compress_image(self.profile_image, quality=60, max_width=800)
+                 except (FileNotFoundError, ValueError, OSError):
+                     pass
 
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.user.username
 
+class ProfileView(models.Model):
+    photographer = models.ForeignKey(PhotographerProfile, on_delete=models.CASCADE, related_name='profile_views')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    session_key = models.CharField(max_length=40, null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['photographer', 'user']),
+            models.Index(fields=['photographer', 'session_key']),
+        ]
+
+    def __str__(self):
+        viewer = self.user.username if self.user else f"Anonymous ({self.session_key})"
+        return f"{viewer} viewed {self.photographer.user.username}"
+
 class Photo(models.Model):
     photographer = models.ForeignKey(PhotographerProfile, on_delete=models.CASCADE, related_name='photos')
     image = models.ImageField(upload_to='photographs')
+    category = models.CharField(max_length=50, choices=SPECIALIZATION_CHOICES, default='wedding', verbose_name="Категория")
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        if self.image and isinstance(self.image.file, InMemoryUploadedFile):
-             self.image = compress_image(self.image, quality=70, max_width=1600)
+        if self.image:
+            try:
+                if isinstance(self.image.file, InMemoryUploadedFile):
+                     self.image = compress_image(self.image, quality=70, max_width=1600)
+            except (FileNotFoundError, ValueError, OSError):
+                pass
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -170,3 +201,33 @@ class News(models.Model):
 
     def __str__(self):
         return self.title
+
+class PhotoLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='photo_likes')
+    photo = models.ForeignKey(Photo, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'photo')
+
+    def __str__(self):
+        return f"{self.user.username} likes photo {self.photo.id}"
+
+class SupportRequest(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'Новый'),
+        ('in_progress', 'В работе'),
+        ('resolved', 'Решен'),
+        ('closed', 'Закрыт'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='support_requests')
+    subject = models.CharField(max_length=200, default='Вопрос в поддержку', verbose_name="Тема")
+    message = models.TextField(verbose_name="Сообщение")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name="Статус")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
+    admin_response = models.TextField(blank=True, null=True, verbose_name="Ответ администратора")
+
+    def __str__(self):
+        return f"{self.subject} - {self.user.username}"

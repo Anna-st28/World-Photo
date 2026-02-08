@@ -1,28 +1,38 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from .forms import UserRegistrationForm, PhotographerProfileForm, PhotoUploadForm, BookingRequestForm, ClientProfileForm
-from .models import PhotographerProfile, Photo, News, BookingRequest, Favorite, ClientProfile
+from .forms import UserRegistrationForm, PhotographerProfileForm, PhotoUploadForm, BookingRequestForm, ClientProfileForm, SupportRequestForm
+from .models import PhotographerProfile, Photo, News, BookingRequest, Favorite, ClientProfile, PhotoLike, SupportRequest, ProfileView, SPECIALIZATION_CHOICES
 import random
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from django.db.models import Q
+from django.db.models import Q, Count, Exists, OuterRef
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.forms import PasswordChangeForm
+from django.utils import timezone
+from datetime import timedelta
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 
+
 def home(request):
-    # Get random photos for "Best Photos" simulation or just latest
-    all_photos = list(Photo.objects.all())
-    # Return up to 6 random photos
-    best_photos = random.sample(all_photos, min(len(all_photos), 6))
+    one_week_ago = timezone.now() - timedelta(days=7)
     
-    specializations = PhotographerProfile.SPECIALIZATION_CHOICES
+    best_photos = Photo.objects.annotate(
+        recent_likes_count=Count('likes', filter=Q(likes__created_at__gte=one_week_ago))
+    ).filter(recent_likes_count__gt=0).order_by('-recent_likes_count')[:6]
+    
+    if not best_photos:
+        all_photos = list(Photo.objects.all())
+        best_photos = random.sample(all_photos, min(len(all_photos), 6))
+    
+    specializations = SPECIALIZATION_CHOICES
     
     return render(request, 'users/home.html', {
         'best_photos': best_photos,
         'specializations': specializations
     })
+
 
 def register(request):
     if request.method == 'POST':
@@ -49,6 +59,7 @@ def register(request):
         form = UserRegistrationForm()
     return render(request, 'users/register.html', {'form': form})
 
+
 @login_required
 def dashboard(request):
     # Check if user is photographer
@@ -73,6 +84,18 @@ def dashboard(request):
     
     # Forms for client
     client_form = None
+    
+    # Support form and data
+    support_form = SupportRequestForm()
+    my_support_requests = SupportRequest.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Admin data
+    admin_support_requests = []
+    admin_new_requests_count = 0
+    if request.user.is_superuser:
+        # Show ONLY new requests as per requirement "Resolved automatically deletes" (from view)
+        admin_support_requests = SupportRequest.objects.filter(status='new').order_by('-created_at')
+        admin_new_requests_count = admin_support_requests.count()
 
     if is_photographer:
         p_form = PhotographerProfileForm(instance=profile)
@@ -110,7 +133,47 @@ def dashboard(request):
              
         # Handle contact form in help section
         elif 'send_question' in request.POST:
-            messages.success(request, 'Ваш вопрос отправлен в поддержку. Мы ответим в ближайшее время.')
+            support_form = SupportRequestForm(request.POST)
+            if support_form.is_valid():
+                support_request = support_form.save(commit=False)
+                support_request.user = request.user
+                support_request.save()
+                messages.success(request, 'Ваш вопрос отправлен в поддержку. Мы ответим в ближайшее время.')
+                return redirect('dashboard')
+            else:
+                messages.error(request, 'Пожалуйста, заполните поле сообщения.')
+
+        # Handle Admin Reply
+        elif 'admin_reply' in request.POST and request.user.is_superuser:
+            request_id = request.POST.get('request_id')
+            admin_response = request.POST.get('admin_response')
+            if request_id and admin_response:
+                try:
+                    support_request = SupportRequest.objects.get(id=request_id)
+                    support_request.admin_response = admin_response
+                    support_request.status = 'resolved'
+                    support_request.save()
+                    messages.success(request, f'Ответ пользователю {support_request.user.username} отправлен. Обращение обработано.')
+                except SupportRequest.DoesNotExist:
+                    messages.error(request, 'Обращение не найдено.')
+            else:
+                messages.error(request, 'Невозможно отправить пустой ответ.')
+            return redirect('dashboard')
+
+        # Handle Admin Delete Request
+        elif 'delete_request' in request.POST:
+            request_id = request.POST.get('request_id')
+            if request_id:
+                try:
+                    support_request = SupportRequest.objects.get(id=request_id)
+                    # Allow deletion if superuser OR (owner of request AND status is resolved)
+                    if request.user.is_superuser or (support_request.user == request.user and support_request.status == 'resolved'):
+                        support_request.delete()
+                        messages.success(request, 'Обращение удалено.')
+                    else:
+                        messages.error(request, 'У вас нет прав для удаления этого обращения.')
+                except SupportRequest.DoesNotExist:
+                    messages.error(request, 'Обращение не найдено.')
             return redirect('dashboard')
 
         # Handle Account Deletion
@@ -213,8 +276,9 @@ def dashboard(request):
                 photo_form = PhotoUploadForm(request.POST, request.FILES)
                 if photo_form.is_valid():
                     images = request.FILES.getlist('image')
+                    category = photo_form.cleaned_data['category']
                     for img in images:
-                        Photo.objects.create(photographer=profile, image=img)
+                        Photo.objects.create(photographer=profile, image=img, category=category)
                     
                     count = len(images)
                     if count > 0:
@@ -247,7 +311,12 @@ def dashboard(request):
         'favorites': favorites,
         'client_form': client_form,
         'client_profile': client_profile,
+        'support_form': support_form,
+        'my_support_requests': my_support_requests,
+        'admin_support_requests': admin_support_requests,
+        'admin_new_requests_count': admin_new_requests_count,
     })
+
 
 def specialists(request):
     photographers = PhotographerProfile.objects.all()
@@ -286,19 +355,52 @@ def specialists(request):
         for p in photographers:
             p.is_favorite = p.id in favorite_ids
 
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(photographers, 15)
+    
+    try:
+        photographers_page = paginator.page(page)
+    except PageNotAnInteger:
+        photographers_page = paginator.page(1)
+    except EmptyPage:
+        photographers_page = paginator.page(paginator.num_pages)
+
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        html = render_to_string('users/specialists_list.html', {'photographers': photographers, 'user': request.user})
+        html = render_to_string('users/specialists_list.html',
+                                {'photographers': photographers_page, 'user': request.user}, request=request)
         return JsonResponse({'html': html})
 
-    return render(request, 'users/specialists.html', {'photographers': photographers})
+    return render(request, 'users/specialists.html', {'photographers': photographers_page})
 
 
 def photographer_detail(request, pk):
     photographer = get_object_or_404(PhotographerProfile, pk=pk)
     
-    # Increment views
-    photographer.views_count += 1
-    photographer.save(update_fields=['views_count'])
+    # Increment views (Unique per user/session)
+    if request.user.is_authenticated:
+        # Check if user is NOT the photographer themselves
+        if request.user != photographer.user:
+            # Check if user already viewed
+            if not ProfileView.objects.filter(photographer=photographer, user=request.user).exists():
+                ProfileView.objects.create(photographer=photographer, user=request.user)
+                photographer.views_count += 1
+                photographer.save(update_fields=['views_count'])
+    else:
+        # Check session for anonymous users
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.save()
+            session_key = request.session.session_key
+        
+        if session_key and not ProfileView.objects.filter(photographer=photographer, session_key=session_key).exists():
+             ProfileView.objects.create(
+                 photographer=photographer, 
+                 session_key=session_key,
+                 ip_address=request.META.get('REMOTE_ADDR')
+             )
+             photographer.views_count += 1
+             photographer.save(update_fields=['views_count'])
     
     is_favorite = False
     if request.user.is_authenticated:
@@ -328,11 +430,31 @@ def photographer_detail(request, pk):
                 messages.success(request, 'Ваша заявка успешно отправлена!')
                 return redirect('photographer_detail', pk=pk)
 
+    # Get photos with like status
+    photos = photographer.photos.all().order_by('-uploaded_at')
+    
+    # Get distinct categories used by this photographer
+    used_categories = set(photos.values_list('category', flat=True))
+    
+    # Filter specialization choices
+    active_specializations = [
+        (code, name) for code, name in SPECIALIZATION_CHOICES 
+        if code in used_categories
+    ]
+    
+    if request.user.is_authenticated:
+        photos = photos.annotate(
+            is_liked=Exists(PhotoLike.objects.filter(photo=OuterRef('pk'), user=request.user))
+        )
+
     return render(request, 'users/photographer_detail.html', {
         'photographer': photographer,
         'booking_form': form,
-        'is_favorite': is_favorite
+        'is_favorite': is_favorite,
+        'photos': photos,
+        'specialization_choices': active_specializations
     })
+
 
 @login_required
 def toggle_favorite(request, pk):
@@ -348,6 +470,32 @@ def toggle_favorite(request, pk):
             
         return JsonResponse({'status': 'ok', 'is_favorite': is_favorite})
     return JsonResponse({'status': 'error'}, status=400)
+
+
+@login_required
+def toggle_photo_like(request, pk):
+    if request.method == 'POST':
+        photo = get_object_or_404(Photo, pk=pk)
+        
+        # Prevent self-liking
+        if photo.photographer.user == request.user:
+            return JsonResponse({'status': 'error', 'message': 'Нельзя лайкать свои фотографии'}, status=403)
+            
+        like, created = PhotoLike.objects.get_or_create(user=request.user, photo=photo)
+        
+        if not created:
+            like.delete()
+            is_liked = False
+        else:
+            is_liked = True
+            
+        return JsonResponse({
+            'status': 'ok', 
+            'is_liked': is_liked,
+            'likes_count': photo.likes.count()
+        })
+    return JsonResponse({'status': 'error'}, status=400)
+
 
 @login_required
 def delete_profile_image(request):
@@ -372,6 +520,7 @@ def delete_profile_image(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
 
+
 def gallery(request):
     photos = Photo.objects.all().order_by('-uploaded_at')
     
@@ -382,9 +531,11 @@ def gallery(request):
             
     return render(request, 'users/gallery.html', {'photos': photos})
 
+
 def news(request):
     news_items = News.objects.all().order_by('-created_at')
     return render(request, 'users/news.html', {'news_items': news_items})
+
 
 def news_detail(request, pk):
     news_item = get_object_or_404(News, pk=pk)

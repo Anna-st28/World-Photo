@@ -8,6 +8,7 @@ urlpatterns = [
     path('specialists/<int:pk>/favorite/', views.toggle_favorite, name='toggle_favorite'),
     path('news/', views.news, name='news'),
     path('news/<int:pk>/', views.news_detail, name='news_detail'),
+    path('photo/<int:pk>/like/', views.toggle_photo_like, name='toggle_photo_like'),
     path('gallery/', views.gallery, name='gallery'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('profile/delete-image/', views.delete_profile_image, name='delete_profile_image'),

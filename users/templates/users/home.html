@@ -4,12 +4,12 @@
 {% block content %}
 <section class="hero">
     <div class="hero-slideshow">
-        <div class="slide active" style="background-image: url({% static 'img/Слайдшоу/1.jpg' %});"></div>
-        <div class="slide" style="background-image: url({% static 'img/Слайдшоу/2.jpg' %});"></div>
-        <div class="slide" style="background-image: url({% static 'img/Слайдшоу/3.jpg' %});"></div>
-        <div class="slide" style="background-image: url({% static 'img/Слайдшоу/4.jpg' %});"></div>
-        <div class="slide" style="background-image: url({% static 'img/Слайдшоу/5.jpg' %});"></div>
-        <div class="slide" style="background-image: url({% static 'img/Слайдшоу/6.jpg' %});"></div>
+        <div class="slide active" style="background-image: url('{% static 'img/slideshow/1.jpg' %}');"></div>
+        <div class="slide" style="background-image: url('{% static 'img/slideshow/2.jpg' %}');"></div>
+        <div class="slide" style="background-image: url('{% static 'img/slideshow/3.jpg' %}');"></div>
+        <div class="slide" style="background-image: url('{% static 'img/slideshow/4.jpg' %}');"></div>
+        <div class="slide" style="background-image: url('{% static 'img/slideshow/5.jpg' %}');"></div>
+        <div class="slide" style="background-image: url('{% static 'img/slideshow/6.jpg' %}');"></div>
     </div>
     <div class="hero-content">
         <h1>Найди своего идеального фотографа</h1>
@@ -43,6 +43,11 @@
                 <div class="photo-card">
                     <img src="{{ photo.image.url }}" alt="Photo by {{ photo.photographer.user.username }}" class="photo-img">
                     <div class="photo-overlay">
+                        {% if photo.recent_likes_count %}
+                            <div class="likes-badge" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
+                                <i class="fas fa-heart"></i> {{ photo.recent_likes_count }}
+                            </div>
+                        {% endif %}
                         
                         <div class="photographer-info">
                             <a href="{% url 'photographer_detail' photo.photographer.pk %}" class="photographer-link">

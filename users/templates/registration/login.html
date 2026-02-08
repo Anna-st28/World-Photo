@@ -27,6 +27,9 @@
                 </div>
             {% endfor %}
             <button type="submit" class="btn btn-primary" style="width: 100%;">Войти</button>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="{% url 'password_reset' %}" style="color: #666; font-size: 0.9rem;">Забыли пароль?</a>
+            </div>
         </form>
         <p style="text-align: center; margin-top: 20px; font-size: 0.9rem;">
             Нет аккаунта? <a href="{% url 'register' %}" style="color: var(--primary-color); font-weight: bold;">Зарегистрироваться</a>

@@ -50,3 +50,29 @@
     </div>
     {% endfor %}
 </div>
+
+{% if photographers.has_other_pages %}
+<div class="pagination-wrapper">
+    <ul class="pagination">
+        {% if photographers.has_previous %}
+            <li><a href="?page={{ photographers.previous_page_number }}{% if request.GET.specialization %}&specialization={{ request.GET.specialization }}{% endif %}{% if request.GET.city %}&city={{ request.GET.city }}{% endif %}{% if request.GET.price_min %}&price_min={{ request.GET.price_min }}{% endif %}{% if request.GET.price_max %}&price_max={{ request.GET.price_max }}{% endif %}{% if request.GET.language %}&language={{ request.GET.language }}{% endif %}" class="page-link prev">Предыдущая</a></li>
+        {% else %}
+            <li class="disabled"><span class="page-link prev">Предыдущая</span></li>
+        {% endif %}
+
+        {% for i in photographers.paginator.page_range %}
+            {% if photographers.number == i %}
+                <li class="active"><span class="page-link">{{ i }}</span></li>
+            {% else %}
+                <li><a href="?page={{ i }}{% if request.GET.specialization %}&specialization={{ request.GET.specialization }}{% endif %}{% if request.GET.city %}&city={{ request.GET.city }}{% endif %}{% if request.GET.price_min %}&price_min={{ request.GET.price_min }}{% endif %}{% if request.GET.price_max %}&price_max={{ request.GET.price_max }}{% endif %}{% if request.GET.language %}&language={{ request.GET.language }}{% endif %}" class="page-link">{{ i }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if photographers.has_next %}
+            <li><a href="?page={{ photographers.next_page_number }}{% if request.GET.specialization %}&specialization={{ request.GET.specialization }}{% endif %}{% if request.GET.city %}&city={{ request.GET.city }}{% endif %}{% if request.GET.price_min %}&price_min={{ request.GET.price_min }}{% endif %}{% if request.GET.price_max %}&price_max={{ request.GET.price_max }}{% endif %}{% if request.GET.language %}&language={{ request.GET.language }}{% endif %}" class="page-link next">Следующая</a></li>
+        {% else %}
+            <li class="disabled"><span class="page-link next">Следующая</span></li>
+        {% endif %}
+    </ul>
+</div>
+{% endif %}

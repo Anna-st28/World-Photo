@@ -16,7 +16,14 @@
                     <li><a onclick="openTab(event, 'bookings')" class="tab-link">Мои заказы</a></li>
                 {% endif %}
                 <li><a onclick="openTab(event, 'settings')" class="tab-link">Настройки</a></li>
-                <li><a onclick="openTab(event, 'help')" class="tab-link">Помощь</a></li>
+                <li>
+                    <a onclick="openTab(event, 'help')" class="tab-link" style="display: flex; justify-content: space-between; align-items: center;">
+                        Помощь
+                        {% if user.is_superuser and admin_new_requests_count > 0 %}
+                            <span class="badge badge-danger" style="background-color: #dc3545; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.75rem;">{{ admin_new_requests_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
             </ul>
             
             <div class="sidebar-footer">
@@ -253,8 +260,11 @@
                         <h4 style="margin-bottom: 15px;">Добавить фото</h4>
                         <form method="post" enctype="multipart/form-data" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                             {% csrf_token %}
-                            <div style="flex: 1;">
+                            <div style="flex: 1; min-width: 200px;">
                                 {{ photo_form.image }}
+                            </div>
+                            <div style="width: 200px;">
+                                {{ photo_form.category }}
                             </div>
                             <button type="submit" name="upload_photo" class="btn btn-outline">Загрузить</button>
                         </form>
@@ -266,6 +276,7 @@
                             <div class="photo-item">
                                 <img src="{{ photo.image.url }}" alt="My Photo" style="height: 150px;">
                                 <div class="photo-info" style="padding: 10px; text-align: center;">
+                                    <span class="badge" style="background: #f0f0f0; color: #333; margin-bottom: 5px; display: inline-block; font-size: 0.8rem; padding: 3px 8px; border-radius: 12px;">{{ photo.get_category_display }}</span>
                                     <small style="color: #888; display: block; margin-bottom: 5px;">{{ photo.uploaded_at|date:"d M Y" }}</small>
                                 </div>
                             </div>
@@ -389,6 +400,102 @@
                     <div class="faq-section">
                         <h3 class="section-header">Помощь</h3>
                         
+                        {% if user.is_superuser %}
+                            <div class="admin-support-panel" style="margin-bottom: 40px;">
+                                <h4 style="margin-bottom: 20px;">Входящие обращения ({{ admin_support_requests|length }})</h4>
+                                
+                                {% for req in admin_support_requests %}
+                                    <div class="support-card" style="border: 1px solid #eee; padding: 20px; border-radius: 8px; margin-bottom: 20px; background: {% if req.status == 'new' %}#fff8e1{% else %}#fff{% endif %};">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                            <div>
+                                                <strong>От: {{ req.user.username }}</strong>
+                                                <div class="text-muted" style="font-size: 0.9rem;">{{ req.created_at|date:"d M Y H:i" }}</div>
+                                            </div>
+                                            <div style="display: flex; gap: 10px; align-items: center;">
+                                                <span class="badge" style="padding: 5px 10px; border-radius: 4px; background: {% if req.status == 'new' %}#ffc107{% elif req.status == 'resolved' %}#28a745{% else %}#17a2b8{% endif %}; color: {% if req.status == 'new' %}#333{% else %}#fff{% endif %};">
+                                                    {{ req.get_status_display }}
+                                                </span>
+                                                {% if req.status == 'new' %}
+                                                    <form method="post" onsubmit="return confirm('Удалить это обращение?');" style="margin: 0;">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="request_id" value="{{ req.id }}">
+                                                        <button type="submit" name="delete_request" class="btn btn-sm btn-outline-danger" title="Удалить">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                                            <p style="margin: 0;">{{ req.message }}</p>
+                                        </div>
+
+                                        {% if req.admin_response %}
+                                            <div style="margin-bottom: 15px; border-left: 3px solid #28a745; padding-left: 15px;">
+                                                <strong>Ваш ответ:</strong>
+                                                <p style="margin: 5px 0;">{{ req.admin_response }}</p>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <form method="post" class="admin-reply-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="request_id" value="{{ req.id }}">
+                                            <div class="form-group">
+                                                <textarea name="admin_response" class="form-control" rows="3" placeholder="Напишите ответ пользователю..." style="width: 100%; margin-bottom: 10px;">{% if req.admin_response %}{{ req.admin_response }}{% endif %}</textarea>
+                                            </div>
+                                            <button type="submit" name="admin_reply" class="btn btn-sm btn-primary">
+                                                {% if req.admin_response %}Обновить ответ{% else %}Отправить ответ{% endif %}
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% empty %}
+                                    <p>Нет обращений.</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- User's Request History -->
+                        <div class="user-support-history" style="margin-bottom: 40px;">
+                            <h4 style="margin-bottom: 20px;">Мои обращения</h4>
+                            {% for req in my_support_requests %}
+                                <div class="support-card" style="border: 1px solid #eee; padding: 20px; border-radius: 8px; margin-bottom: 20px; background: #fff;">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                        <div class="text-muted" style="font-size: 0.9rem;">{{ req.created_at|date:"d M Y H:i" }}</div>
+                                        <div style="display: flex; gap: 10px; align-items: center;">
+                                            <span class="badge" style="padding: 5px 10px; border-radius: 4px; background: {% if req.status == 'new' %}#ffc107{% elif req.status == 'resolved' %}#28a745{% else %}#17a2b8{% endif %}; color: {% if req.status == 'new' %}#333{% else %}#fff{% endif %};">
+                                                {{ req.get_status_display }}
+                                            </span>
+                                            {% if req.status == 'resolved' %}
+                                                <form method="post" onsubmit="return confirm('Удалить это обращение?');" style="margin: 0;">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="request_id" value="{{ req.id }}">
+                                                    <button type="submit" name="delete_request" class="btn btn-sm btn-outline-danger" title="Удалить из истории">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 15px;">
+                                        <strong>Ваш вопрос:</strong>
+                                        <p style="margin: 5px 0;">{{ req.message }}</p>
+                                    </div>
+
+                                    {% if req.admin_response %}
+                                        <div style="background: #f0fdf4; padding: 15px; border-radius: 6px; border-left: 4px solid #28a745;">
+                                            <strong>Ответ поддержки:</strong>
+                                            <p style="margin: 5px 0;">{{ req.admin_response }}</p>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted" style="font-style: italic;">Ожидается ответ...</p>
+                                    {% endif %}
+                                </div>
+                            {% empty %}
+                                <p>Вы еще не обращались в поддержку.</p>
+                            {% endfor %}
+                        </div>
 
                
                     <div class="contact-section">
@@ -397,7 +504,7 @@
                             <form method="post">
                                 {% csrf_token %}
                                 <div class="form-group">
-                                    <textarea name="question" class="form-control" rows="5" placeholder="Опишите проблему" required></textarea>
+                                    {{ support_form.message }}
                                 </div>
                                 <button type="submit" name="send_question" class="btn btn-dark w-100">Задать вопрос</button>
                             </form>

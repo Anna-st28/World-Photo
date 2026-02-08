@@ -1,6 +1,6 @@
+<!DOCTYPE html>
 {% load static %}
 {% load user_filters %}
-<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <!-- Phone Mask JS -->
+    <script src="{% static 'js/phone-mask.js' %}"></script>
 </head>
 <body>
 
@@ -24,34 +26,42 @@
                     <i class="fas fa-camera-retro"></i> World Photo
                 </a>
                 
-                <ul class="nav-links">
-                    <li><a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">Главная</a></li>
-                    <li><a href="{% url 'specialists' %}" class="{% if 'specialists' in request.path %}active{% endif %}">Специалисты</a></li>
-                    <li><a href="{% url 'news' %}" class="{% if 'news' in request.path %}active{% endif %}">Новости</a></li>
-                    <li><a href="{% url 'gallery' %}" class="{% if 'gallery' in request.path %}active{% endif %}">Галерея</a></li>
-                </ul>
+                <button class="burger-btn" id="burgerBtn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
 
-                <div class="auth-buttons">
-                    {% if user.is_authenticated %}
-                        <div class="user-menu">
-                            <button class="user-avatar-btn">
-                                <img src="{{ user|get_avatar_url }}" alt="{{ user.username }}" class="user-avatar-img">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <div class="dropdown-content">
-                                <a href="{% url 'dashboard' %}?tab=profile">Профиль</a>
-                                <a href="{% url 'dashboard' %}?tab=settings">Настройки</a>
-                                <a href="{% url 'dashboard' %}?tab=help">Помощь</a>
-                                <form action="{% url 'logout' %}" method="post" id="logout-form" style="display: none;">
-                                    {% csrf_token %}
-                                </form>
-                                <a href="#" onclick="document.getElementById('logout-form').submit(); return false;">Выйти</a>
-                            </div>
-                        </div>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="btn btn-text">Войти</a>
-                        <a href="{% url 'register' %}" class="btn btn-primary">Регистрация</a>
-                    {% endif %}
+                <div class="nav-menu" id="navMenu">
+                    <ul class="nav-links">
+                        <li><a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">Главная</a></li>
+                        <li><a href="{% url 'specialists' %}" class="{% if 'specialists' in request.path %}active{% endif %}">Специалисты</a></li>
+                        <li><a href="{% url 'news' %}" class="{% if 'news' in request.path %}active{% endif %}">Новости</a></li>
+                        <li><a href="{% url 'gallery' %}" class="{% if 'gallery' in request.path %}active{% endif %}">Галерея</a></li>
+
+                        {% if user.is_authenticated %}
+                            <li class="user-menu-item">
+                                <div class="user-menu">
+                                    <button class="user-avatar-btn">
+                                        <img src="{{ user|get_avatar_url }}" alt="{{ user.username }}" class="user-avatar-img">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
+                                    <div class="dropdown-content">
+                                        <a href="{% url 'dashboard' %}?tab=profile">Профиль</a>
+                                        <a href="{% url 'dashboard' %}?tab=settings">Настройки</a>
+                                        <a href="{% url 'dashboard' %}?tab=help">Помощь</a>
+                                        <form action="{% url 'logout' %}" method="post" id="logout-form" style="display: none;">
+                                            {% csrf_token %}
+                                        </form>
+                                        <a href="#" onclick="document.getElementById('logout-form').submit(); return false;">Выйти</a>
+                                    </div>
+                                </div>
+                            </li>
+                        {% else %}
+                            <li><a href="{% url 'login' %}" class="btn btn-text">Войти</a></li>
+                            <li><a href="{% url 'register' %}" class="btn btn-primary">Регистрация</a></li>
+                        {% endif %}
+                    </ul>
                 </div>
             </div>
         </nav>
@@ -78,7 +88,7 @@
             </div>
             <div class="footer-section">
                 <h4>Контакты</h4>
-                <p><i class="fas fa-envelope"></i> info@worldphoto.ru</p>
+                <p><i class="fas fa-envelope"></i>infoworldphoto@gmail.com</p>
                 <p><i class="fas fa-phone"></i> +7 (999) 000-00-00</p>
             </div>
         </div>
@@ -88,38 +98,84 @@
     </footer>
 
     <div class="toast-notification" id="toast-notification">
-        <div class="toast-success">
+        <div class="toast-icon">
             <i class="fas fa-check-circle"></i>
         </div>
         <div class="toast-content">
-            <h4>Успешно!</h4>
+            <h4 id="toast-title">Успешно!</h4>
             <p id="toast-message"></p>
         </div>
     </div>
 
-    {% if messages %}
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
+    <script>
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast-notification');
+            const toastMessage = document.getElementById('toast-message');
+            const toastTitle = document.getElementById('toast-title');
+            const toastIcon = toast.querySelector('.toast-icon i');
+            
+            toastMessage.textContent = message;
+            
+            // Reset classes
+            toast.className = 'toast-notification';
+            
+            if (type === 'error') {
+                toast.classList.add('error');
+                toastTitle.textContent = 'Ошибка';
+                toastIcon.className = 'fas fa-times-circle';
+            } else {
+                toast.classList.add('success');
+                toastTitle.textContent = 'Успешно!';
+                toastIcon.className = 'fas fa-check-circle';
+            }
+            
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if messages %}
                 {% for message in messages %}
                     {% if message.tags == 'success' %}
-                        showToast("{{ message }}");
+                        showToast("{{ message }}", 'success');
+                    {% elif message.tags == 'error' %}
+                        showToast("{{ message }}", 'error');
+                    {% else %}
+                        showToast("{{ message }}", 'success');
                     {% endif %}
                 {% endfor %}
-            });
+            {% endif %}
+        });
+    </script>
 
-            function showToast(message) {
-                const toast = document.getElementById('toast-notification');
-                const toastMessage = document.getElementById('toast-message');
-                
-                toastMessage.textContent = message;
-                toast.classList.add('show');
-                
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 5000);
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const burgerBtn = document.getElementById('burgerBtn');
+            const navMenu = document.getElementById('navMenu');
+
+            if (burgerBtn && navMenu) {
+                burgerBtn.addEventListener('click', function() {
+                    burgerBtn.classList.toggle('active');
+                    navMenu.classList.toggle('active');
+                    document.body.classList.toggle('no-scroll');
+                });
             }
-        </script>
-    {% endif %}
 
+            // Mobile User Menu Toggle
+            const userAvatarBtn = document.querySelector('.user-avatar-btn');
+            const userMenu = document.querySelector('.user-menu');
+            
+            if (userAvatarBtn && userMenu) {
+                userAvatarBtn.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 768) {
+                        userMenu.classList.toggle('active');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

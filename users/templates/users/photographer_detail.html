@@ -56,11 +56,27 @@
                 {% endif %}
 
                 <section class="portfolio-section">
-                    <h3>Портфолио</h3>
+                    <div class="portfolio-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                        <h3 style="margin-bottom: 0;">Портфолио</h3>
+                        <div class="portfolio-tabs">
+                            <button class="tab-btn active" onclick="filterPortfolio('all', this)">Все</button>
+                            {% for code, name in specialization_choices %}
+                                <button class="tab-btn" onclick="filterPortfolio('{{ code }}', this)">{{ name }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
                     <div class="portfolio-masonry">
-                        {% for photo in photographer.photos.all %}
-                            <div class="portfolio-item-large">
+                        {% for photo in photos %}
+                            <div class="portfolio-item-large" data-category="{{ photo.category }}" style="position: relative;">
                                 <img src="{{ photo.image.url }}" alt="Photo">
+                                {% if user.is_authenticated %}
+                                <button class="like-btn" 
+                                        data-id="{{ photo.id }}" 
+                                        onclick="toggleLike(this, {{ photo.id }})"
+                                        style="position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; z-index: 10;">
+                                    <i class="{% if photo.is_liked %}fas{% else %}far{% endif %} fa-heart" style="color: {% if photo.is_liked %}#e91e63{% else %}#333{% endif %}; font-size: 1.2rem;"></i>
+                                </button>
+                                {% endif %}
                             </div>
                         {% empty %}
                             <div class="no-photos">
@@ -152,38 +168,91 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const phoneInput = document.getElementById('phone-input');
-        if (!phoneInput) return;
-
-        phoneInput.addEventListener('input', function(e) {
-            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
-            
-            if (!x[1]) {
-                e.target.value = '+ 7';
-                return;
-            }
-
-            if (x[1] !== '7') {
-                // If user starts typing with 8 or 9, replace first digit with 7
-                x[1] = '7';
-            }
-
-            e.target.value = '+ ' + x[1] + (x[2] ? ' ' + x[2] : '') + (x[3] ? ' ' + x[3] : '') + (x[4] ? ' ' + x[4] : '') + (x[5] ? ' ' + x[5] : '');
-        });
-
-        // Initialize if empty
-        if (!phoneInput.value) {
-            phoneInput.value = '+ 7 ';
-        }
+    function toggleLike(btn, photoId) {
+        // Use Django's url tag to generate the base path, replacing the dummy ID '0' with the actual photoId
+        const url = "{% url 'toggle_photo_like' 0 %}".replace('0', photoId);
         
-        // Handle backspace to prevent deleting the prefix
-        phoneInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Backspace' && phoneInput.value.length <= 4) {
-                e.preventDefault();
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                const icon = btn.querySelector('i');
+                if (data.is_liked) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    icon.style.color = '#e91e63';
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    icon.style.color = '#333';
+                }
+            } else if (data.status === 'error') {
+                // Show error toast
+                showToast(data.message || 'Произошла ошибка', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Произошла ошибка при отправке запроса', 'error');
+        });
+    }
+    function filterPortfolio(category, btn) {
+        // Update active button
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Filter items
+        const items = document.querySelectorAll('.portfolio-item-large');
+        items.forEach(item => {
+            if (category === 'all' || item.dataset.category === category) {
+                item.style.display = ''; 
+            } else {
+                item.style.display = 'none';
             }
         });
-    });
+    }
 </script>
-{% endblock %}
 
+<style>
+.portfolio-tabs {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 5px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+}
+.portfolio-tabs::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Webkit */
+}
+.tab-btn {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    color: #555;
+    outline: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.tab-btn:hover {
+    background: #e9ecef;
+}
+.tab-btn.active {
+    background: var(--primary-color, #6a1b9a);
+    color: white;
+    border-color: var(--primary-color, #6a1b9a);
+}
+</style>
+{% endblock %}
