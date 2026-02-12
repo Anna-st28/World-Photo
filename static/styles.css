@@ -2,9 +2,9 @@
    1. Variables & Reset
    ========================================= */
 :root {
-    --primary-color: #9e0000;
-    --primary-hover: #9e0000;
-    --secondary-color: #9e0000;
+    --primary-color: #940303;
+    --primary-hover: #940303;
+    --secondary-color: #940303;
     --text-dark: #333333;
     --text-light: #666666;
     --bg-light: #f9f9f9;
@@ -266,13 +266,13 @@ header {
 }
 
 .btn-danger {
-    background-color: #9e0000;
+    background-color: #940303;
     color: white;
     border: none;
 }
 
 .btn-danger:hover {
-    background-color: #9e0000;
+    background-color: #940303;
     transform: translateY(-2px);
     box-shadow: var(--shadow-sm);
 }
@@ -411,7 +411,7 @@ header {
    7. Footer
    ========================================= */
 .footer {
-    background-color: #9e0000;
+    background-color: #940303;
     color: #ecf0f1;
     padding: 60px 0 0;
     margin-top: auto;
@@ -430,7 +430,7 @@ header {
 }
 
 .footer-section h4 {
-    color: #bdc3c7;
+    color: #ffffff;
     margin-bottom: 20px;
     font-size: 1.1rem;
 }
@@ -444,15 +444,15 @@ header {
 }
 
 .footer-section p {
-    color: #bdc3c7;
+    color: #ffffff;
 }
 
 .footer-bottom {
-    background-color: #9e0000;
+    background-color: #000000;
     padding: 20px 0;
     text-align: center;
     font-size: 0.9rem;
-    color: #bdc3c7;
+    color: #d3d3d3;
 }
 
 /* =========================================
@@ -481,30 +481,30 @@ header {
 }
 
 .toast-notification.success {
-    border-left-color: #9e0000;
+    border-left-color: #940303;
 }
 
 .toast-notification.error {
-    border-left-color: #9e0000;
+    border-left-color: #940303;
 }
 
 .toast-notification.success .toast-icon i {
-    color: #9e0000;
+    color: #af82ca;
     font-size: 1.5rem;
 }
 
 .toast-notification.error .toast-icon i {
-    color: #9e0000;
+    color: #940303;
     font-size: 1.5rem;
 }
 
 /* Backward compatibility for existing HTML if needed, though we will update it */
 .toast-success {
-    border-left-color: #9e0000;
+    border-left-color: #af82ca;
 }
 
 .toast-success i {
-    color: #9e0000;
+    color: #af82ca;
     font-size: 1.5rem;
 }
 
@@ -1556,5 +1556,128 @@ input:checked + .slider:before {
     
     .hero-content {
         padding: 15px;
+    }
+}
+
+/* =========================================
+   15. Lightbox
+   ========================================= */
+.lightbox {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    padding-top: 50px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.lightbox.active {
+    display: flex;
+}
+
+.lightbox-content {
+    margin: auto;
+    display: block;
+    /* Force consistent size for all images */
+    width: 90vw;
+    height: 85vh;
+    /* Ensure image fits within the box without distortion */
+    object-fit: contain;
+    animation-name: zoom;
+    animation-duration: 0.6s;
+    border-radius: 4px;
+}
+
+@keyframes zoom {
+    from {transform:scale(0)} 
+    to {transform:scale(1)}
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+    z-index: 10000;
+}
+
+.lightbox-close:hover,
+.lightbox-close:focus {
+    color: #bbb;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.lightbox .lightbox-nav {
+    position: absolute;
+    bottom: 28px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd3e8, #ff9fd0);
+    border: none;
+    color: #ffffff;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10000;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    box-shadow: 0 10px 22px rgba(255, 79, 163, 0.28);
+}
+
+.lightbox .lightbox-nav i {
+    font-size: 20px;
+    line-height: 1;
+    color: #ffffff;
+}
+
+.lightbox .lightbox-nav:hover,
+.lightbox .lightbox-nav:focus {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 14px 28px rgba(255, 79, 163, 0.4);
+}
+
+.lightbox .lightbox-prev {
+    left: calc(50% - 72px);
+}
+
+.lightbox .lightbox-next {
+    left: calc(50% + 20px);
+}
+
+#lightbox-caption {
+    display: none;
+}
+
+
+@media only screen and (max-width: 700px){
+    .lightbox-content {
+        width: 100%;
+    }
+    .lightbox .lightbox-nav {
+        width: 46px;
+        height: 46px;
+        font-size: 18px;
+        bottom: 18px;
+    }
+    .lightbox .lightbox-prev {
+        left: calc(50% - 60px);
+    }
+    .lightbox .lightbox-next {
+        left: calc(50% + 16px);
     }
 }

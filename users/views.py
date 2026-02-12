@@ -41,8 +41,7 @@ def register(request):
             user = form.save(commit=False)
             user.set_password(form.cleaned_data['password'])
             user.save()
-            
-            # Check if photographer
+
             if form.cleaned_data['is_photographer']:
                 PhotographerProfile.objects.create(
                     user=user, 
@@ -50,7 +49,7 @@ def register(request):
                     bio="Расскажите о себе..."
                 )
             else:
-                # Create ClientProfile
+                # Клиентский профиль
                 ClientProfile.objects.create(user=user)
             
             login(request, user)
@@ -62,7 +61,7 @@ def register(request):
 
 @login_required
 def dashboard(request):
-    # Check if user is photographer
+    # Проверка, является ли пользователь, фотографом
     try:
         profile = request.user.photographerprofile
         is_photographer = True
@@ -70,30 +69,29 @@ def dashboard(request):
     except PhotographerProfile.DoesNotExist:
         profile = None
         is_photographer = False
-        # Get or create ClientProfile
+        # Создать ClientProfile
         client_profile, created = ClientProfile.objects.get_or_create(user=request.user)
 
     password_form = PasswordChangeForm(request.user)
     
-    # Forms for photographer
+    # Формы для фотографа
     p_form = None
     photo_form = None
     photos = []
     received_active_bookings = []
     received_completed_bookings = []
     
-    # Forms for client
+    # Формы для клиента
     client_form = None
     
-    # Support form and data
+    # Формы поддержки
     support_form = SupportRequestForm()
     my_support_requests = SupportRequest.objects.filter(user=request.user).order_by('-created_at')
     
-    # Admin data
+    # Данные админа
     admin_support_requests = []
     admin_new_requests_count = 0
     if request.user.is_superuser:
-        # Show ONLY new requests as per requirement "Resolved automatically deletes" (from view)
         admin_support_requests = SupportRequest.objects.filter(status='new').order_by('-created_at')
         admin_new_requests_count = admin_support_requests.count()
 
@@ -107,7 +105,7 @@ def dashboard(request):
     else:
         client_form = ClientProfileForm(instance=client_profile)
 
-    # Common data
+    # Общие данные
     all_sent = BookingRequest.objects.filter(client=request.user, is_deleted_by_client=False).order_by('-created_at')
     sent_active_bookings = all_sent.exclude(status='completed')
     sent_completed_bookings = all_sent.filter(status='completed')
@@ -115,7 +113,7 @@ def dashboard(request):
     favorites = Favorite.objects.filter(user=request.user)
 
     if request.method == 'POST':
-        # Handle password change
+        # Обработка смены пароля
         if 'change_password' in request.POST:
             password_form = PasswordChangeForm(request.user, request.POST)
             if password_form.is_valid():
@@ -126,12 +124,12 @@ def dashboard(request):
             else:
                 messages.error(request, 'Пожалуйста, исправьте ошибки ниже.')
         
-        # Handle settings update (notifications, etc.)
+        # Обработка обновления настроек
         elif 'update_settings' in request.POST:
              messages.success(request, 'Настройки сохранены!')
              return redirect('dashboard')
              
-        # Handle contact form in help section
+        # Обработка контактной формы
         elif 'send_question' in request.POST:
             support_form = SupportRequestForm(request.POST)
             if support_form.is_valid():
@@ -143,7 +141,7 @@ def dashboard(request):
             else:
                 messages.error(request, 'Пожалуйста, заполните поле сообщения.')
 
-        # Handle Admin Reply
+        # Обработка ответа админа
         elif 'admin_reply' in request.POST and request.user.is_superuser:
             request_id = request.POST.get('request_id')
             admin_response = request.POST.get('admin_response')
@@ -160,13 +158,12 @@ def dashboard(request):
                 messages.error(request, 'Невозможно отправить пустой ответ.')
             return redirect('dashboard')
 
-        # Handle Admin Delete Request
+        # Обработать запрос Админ. на удаление
         elif 'delete_request' in request.POST:
             request_id = request.POST.get('request_id')
             if request_id:
                 try:
                     support_request = SupportRequest.objects.get(id=request_id)
-                    # Allow deletion if superuser OR (owner of request AND status is resolved)
                     if request.user.is_superuser or (support_request.user == request.user and support_request.status == 'resolved'):
                         support_request.delete()
                         messages.success(request, 'Обращение удалено.')
@@ -176,7 +173,7 @@ def dashboard(request):
                     messages.error(request, 'Обращение не найдено.')
             return redirect('dashboard')
 
-        # Handle Account Deletion
+        # Удаление учетной записи
         elif 'delete_account' in request.POST:
             user = request.user
     
@@ -185,7 +182,7 @@ def dashboard(request):
             messages.success(request, 'Ваш аккаунт был успешно удален.')
             return redirect('home')
 
-        # Handle Booking Status Update
+        # Статус бронирования
         elif 'update_booking_status' in request.POST:
             booking_id = request.POST.get('booking_id')
             new_status = request.POST.get('status')
@@ -195,27 +192,23 @@ def dashboard(request):
             messages.success(request, 'Статус заявки обновлен.')
             return redirect('dashboard')
         
-        # Handle Booking Cancellation
+        # Отмена бронирования
         elif 'cancel_booking' in request.POST:
             booking_id = request.POST.get('booking_id')
-            # Check if user is client OR photographer involved in this booking
             try:
                 if is_photographer:
                     booking = BookingRequest.objects.get(id=booking_id, photographer=profile)
-                    
-                    # If status is completed or cancelled -> Soft delete for photographer
+
                     if booking.status == 'completed' or booking.status == 'cancelled':
                          booking.is_deleted_by_photographer = True
                          booking.save()
-                         
-                         # Check if both deleted, then actually delete
+
                          if booking.is_deleted_by_client and booking.is_deleted_by_photographer:
                              booking.delete()
                              
                          messages.success(request, 'Заявка удалена из вашего списка.')
                          return redirect('dashboard')
-                         
-                    # If active -> Set status to cancelled
+
                     if booking.status != 'cancelled' and booking.status != 'completed':
                         booking.status = 'cancelled'
                         booking.save()
@@ -224,46 +217,27 @@ def dashboard(request):
                         
                 else:
                     booking = BookingRequest.objects.get(id=booking_id, client=request.user)
-                    
-                    # If status is completed or cancelled -> Soft delete for client
+
                     if booking.status == 'completed' or booking.status == 'cancelled':
                          booking.is_deleted_by_client = True
                          booking.save()
-                         
-                         # Check if both deleted, then actually delete
+
                          if booking.is_deleted_by_client and booking.is_deleted_by_photographer:
                              booking.delete()
                              
                          messages.success(request, 'Заявка удалена из вашего списка.')
                          return redirect('dashboard')
-                    
-                    # For active client bookings, we can default to delete or cancel?
-                    # User said previously: "Сейчас после отмены... давай она будет автоматически удаляться"
-                    # But now we have soft delete.
-                    # If client cancels active booking:
-                    # Option 1: Just delete (hard delete) - easiest for "I don't want this anymore"
-                    # Option 2: Set status to cancelled?
-                    # Let's stick to previous logic: Delete. But now we have flags.
-                    # If we hard delete, it disappears for photographer too.
-                    # Maybe better to set status=cancelled AND soft delete for client?
-                    # But the requirement was "automcatically delete".
-                    # Let's keep hard delete for active client cancellation for now as per previous instruction,
-                    # UNLESS it's completed/cancelled which we handled above.
-                    
-                    pass # Go to default delete below
+
 
             except BookingRequest.DoesNotExist:
-                # Fallback: maybe photographer acting as client? 
-                # Or just general check
                 booking = get_object_or_404(BookingRequest, Q(id=booking_id) & (Q(client=request.user) | Q(photographer__user=request.user)))
-            
-            # Default action for fallback (hard delete)
+
             booking.delete()
             messages.success(request, 'Заявка удалена.')
             return redirect('dashboard')
 
         if is_photographer:
-            # Handle profile update
+            # Обновление профиля
             if 'update_profile' in request.POST:
                 p_form = PhotographerProfileForm(request.POST, request.FILES, instance=profile)
                 if p_form.is_valid():
@@ -271,7 +245,7 @@ def dashboard(request):
                     messages.success(request, 'Профиль обновлен.')
                     return redirect('dashboard')
             
-            # Handle photo upload
+            # Обработка загрузки фотографий
             elif 'upload_photo' in request.POST:
                 photo_form = PhotoUploadForm(request.POST, request.FILES)
                 if photo_form.is_valid():
@@ -288,7 +262,7 @@ def dashboard(request):
                         
                     return redirect('dashboard')
         else:
-            # Handle client profile update
+            # Обрабатывать обновление профиля клиента
             if 'update_client_profile' in request.POST:
                 client_form = ClientProfileForm(request.POST, request.FILES, instance=client_profile)
                 if client_form.is_valid():
@@ -302,10 +276,10 @@ def dashboard(request):
         'photo_form': photo_form,
         'photos': photos,
         'password_form': password_form,
-        'received_bookings': received_active_bookings, # Backward compatibility if needed, but we'll use new names in template
+        'received_bookings': received_active_bookings,
         'received_active_bookings': received_active_bookings,
         'received_completed_bookings': received_completed_bookings,
-        'sent_bookings': sent_active_bookings, # Backward compatibility
+        'sent_bookings': sent_active_bookings,
         'sent_active_bookings': sent_active_bookings,
         'sent_completed_bookings': sent_completed_bookings,
         'favorites': favorites,
@@ -321,7 +295,7 @@ def dashboard(request):
 def specialists(request):
     photographers = PhotographerProfile.objects.all()
 
-    # Filtering
+    # Фильтрация
     specialization = request.GET.get('specialization')
     price_min = request.GET.get('price_min')
     price_max = request.GET.get('price_max')
@@ -349,13 +323,13 @@ def specialists(request):
         except ValueError:
             pass
 
-    # Annotate favorites
+    # В избранное
     if request.user.is_authenticated:
         favorite_ids = Favorite.objects.filter(user=request.user).values_list('photographer_id', flat=True)
         for p in photographers:
             p.is_favorite = p.id in favorite_ids
 
-    # Pagination
+    # Пагинация
     page = request.GET.get('page', 1)
     paginator = Paginator(photographers, 15)
     
@@ -367,8 +341,7 @@ def specialists(request):
         photographers_page = paginator.page(paginator.num_pages)
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        html = render_to_string('users/specialists_list.html',
-                                {'photographers': photographers_page, 'user': request.user}, request=request)
+        html = render_to_string('users/specialists_list.html', {'photographers': photographers_page, 'user': request.user}, request=request)
         return JsonResponse({'html': html})
 
     return render(request, 'users/specialists.html', {'photographers': photographers_page})
@@ -376,18 +349,15 @@ def specialists(request):
 
 def photographer_detail(request, pk):
     photographer = get_object_or_404(PhotographerProfile, pk=pk)
-    
-    # Increment views (Unique per user/session)
+
     if request.user.is_authenticated:
-        # Check if user is NOT the photographer themselves
         if request.user != photographer.user:
-            # Check if user already viewed
             if not ProfileView.objects.filter(photographer=photographer, user=request.user).exists():
                 ProfileView.objects.create(photographer=photographer, user=request.user)
                 photographer.views_count += 1
                 photographer.save(update_fields=['views_count'])
     else:
-        # Check session for anonymous users
+        # проверка анонимных пользователей
         session_key = request.session.session_key
         if not session_key:
             request.session.save()
@@ -430,13 +400,13 @@ def photographer_detail(request, pk):
                 messages.success(request, 'Ваша заявка успешно отправлена!')
                 return redirect('photographer_detail', pk=pk)
 
-    # Get photos with like status
+    # Лайки
     photos = photographer.photos.all().order_by('-uploaded_at')
     
-    # Get distinct categories used by this photographer
+    # Категории фотографа
     used_categories = set(photos.values_list('category', flat=True))
     
-    # Filter specialization choices
+    # Фильтр специализаций
     active_specializations = [
         (code, name) for code, name in SPECIALIZATION_CHOICES 
         if code in used_categories
@@ -476,8 +446,7 @@ def toggle_favorite(request, pk):
 def toggle_photo_like(request, pk):
     if request.method == 'POST':
         photo = get_object_or_404(Photo, pk=pk)
-        
-        # Prevent self-liking
+
         if photo.photographer.user == request.user:
             return JsonResponse({'status': 'error', 'message': 'Нельзя лайкать свои фотографии'}, status=403)
             
@@ -501,18 +470,16 @@ def toggle_photo_like(request, pk):
 def delete_profile_image(request):
     if request.method == 'POST':
         try:
-            # Try photographer profile first
             try:
                 profile = request.user.photographerprofile
             except PhotographerProfile.DoesNotExist:
-                # Try client profile
                 try:
                     profile = request.user.clientprofile
                 except ClientProfile.DoesNotExist:
                     return JsonResponse({'status': 'error', 'message': 'Profile not found'}, status=404)
 
             if profile.profile_image:
-                profile.profile_image.delete(save=False) # Delete file
+                profile.profile_image.delete(save=False)
                 profile.profile_image = None
                 profile.save()
             return JsonResponse({'status': 'ok'})

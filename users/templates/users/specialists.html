@@ -21,9 +21,9 @@
                     <label>Специализация</label>
                     <select class="form-select" name="specialization" onchange="applyFilters()">
                         <option value="any">Любая</option>
-                        <option value="wedding" {% if request.GET.specialization == 'wedding' %}selected{% endif %}>Свадьба</option>
+                        <option value="wedding" {% if request.GET.specialization == 'wedding' %}selected{% endif %}>Свадебный день</option>
                         <option value="portrait" {% if request.GET.specialization == 'portrait' %}selected{% endif %}>Портрет</option>
-                        <option value="reportage" {% if request.GET.specialization == 'reportage' %}selected{% endif %}>Репортаж</option>
+                        <option value="reportage" {% if request.GET.specialization == 'reportage' %}selected{% endif %}>Индивидуальная съемка</option>
                         <option value="lovestory" {% if request.GET.specialization == 'lovestory' %}selected{% endif %}>Love Story</option>
                         <option value="fashion" {% if request.GET.specialization == 'fashion' %}selected{% endif %}>Fashion</option>
                     </select>

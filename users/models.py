@@ -5,6 +5,7 @@ from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import sys
 
+
 def compress_image(image_field, quality=70, max_width=1920):
     if not image_field:
         return image_field
@@ -14,8 +15,7 @@ def compress_image(image_field, quality=70, max_width=1920):
         
         if img.mode != 'RGB':
             img = img.convert('RGB')
-            
-        # Resize if width > max_width
+
         if img.width > max_width:
             output_size = (max_width, int(img.height * (max_width / img.width)))
             img.thumbnail(output_size)
@@ -36,6 +36,7 @@ def compress_image(image_field, quality=70, max_width=1920):
         print(f"Error compressing image: {e}")
         return image_field
 
+
 class ClientProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_image = models.ImageField(upload_to='client_images', blank=True, null=True)
@@ -55,12 +56,13 @@ class ClientProfile(models.Model):
 
 
 SPECIALIZATION_CHOICES = [
-    ('wedding', 'Свадьба'),
+    ('wedding', 'Свадебный день'),
     ('portrait', 'Портрет'),
-    ('reportage', 'Репортаж'),
+    ('reportage', 'Индивидуальная съемка'),
     ('lovestory', 'Love Story'),
     ('fashion', 'Fashion'),
 ]
+
 
 class PhotographerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -80,8 +82,7 @@ class PhotographerProfile(models.Model):
     
     profile_image = models.ImageField(upload_to='profile_images', blank=True, null=True)
     views_count = models.PositiveIntegerField(default=0)
-    
-    # New fields for contact info
+
     phone_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Номер телефона")
     social_vk = models.URLField(blank=True, null=True, verbose_name="Ссылка на ВКонтакте")
     social_telegram = models.CharField(max_length=50, blank=True, null=True, verbose_name="Telegram (username)")
@@ -89,12 +90,12 @@ class PhotographerProfile(models.Model):
 
     def save(self, *args, **kwargs):
         if self.profile_image and not self.id: # Only compress on initial upload or handle update logic carefully
-             # Simple check: if image is being updated. 
-             # Ideally we compare with old instance, but for simplicity in this homework, 
+             # Simple check: if image is being updated.
+             # Ideally we compare with old instance, but for simplicity in this homework,
              # we can just compress. However, compressing already compressed image might degrade quality repeatedly.
              # Better approach: check if it's a new file.
              pass
-             
+
         # For simplicity, we will apply compression if it looks like a raw upload (has file path)
         # In a real app, we'd check if self.pk is None or if 'profile_image' in changed_fields
         if self.profile_image:
@@ -122,6 +123,7 @@ class PhotographerProfile(models.Model):
     def __str__(self):
         return self.user.username
 
+
 class ProfileView(models.Model):
     photographer = models.ForeignKey(PhotographerProfile, on_delete=models.CASCADE, related_name='profile_views')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -138,6 +140,7 @@ class ProfileView(models.Model):
     def __str__(self):
         viewer = self.user.username if self.user else f"Anonymous ({self.session_key})"
         return f"{viewer} viewed {self.photographer.user.username}"
+
 
 class Photo(models.Model):
     photographer = models.ForeignKey(PhotographerProfile, on_delete=models.CASCADE, related_name='photos')
@@ -156,6 +159,7 @@ class Photo(models.Model):
 
     def __str__(self):
         return f"Photo by {self.photographer.user.username}"
+
 
 class BookingRequest(models.Model):
     STATUS_CHOICES = [
@@ -181,6 +185,7 @@ class BookingRequest(models.Model):
     def __str__(self):
         return f"Booking {self.id} from {self.client.username}"
 
+
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
     photographer = models.ForeignKey(PhotographerProfile, on_delete=models.CASCADE, related_name='favorited_by')
@@ -202,6 +207,7 @@ class News(models.Model):
     def __str__(self):
         return self.title
 
+
 class PhotoLike(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='photo_likes')
     photo = models.ForeignKey(Photo, on_delete=models.CASCADE, related_name='likes')
@@ -212,6 +218,7 @@ class PhotoLike(models.Model):
 
     def __str__(self):
         return f"{self.user.username} likes photo {self.photo.id}"
+
 
 class SupportRequest(models.Model):
     STATUS_CHOICES = [

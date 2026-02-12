@@ -161,8 +161,7 @@ class BookingRequestForm(forms.ModelForm):
                 'class': 'phone-mask',
                 'placeholder': '+ 7 (___) ___-__-__', 
                 'id': 'phone-input',
-                # 'pattern': r'\+ 7 \d{3} \d{3} \d{2} \d{2}', # Removed strict pattern as mask handles it
-                'minlength': '18', # +7 (XXX) XXX-XX-XX is 18 chars
+                'minlength': '18',
                 'maxlength': '18'
             }),
         }
@@ -170,11 +169,9 @@ class BookingRequestForm(forms.ModelForm):
     def clean_contact_phone(self):
         phone = self.cleaned_data.get('contact_phone')
         import re
-        # Expected format: +7 (999) 999-99-99
-        # Allow spaces or dashes as separators for flexibility if needed, but mask enforces specific format
-        # Mask format: +7 (XXX) XXX-XX-XX
+        # Формат: +7 (XXX) XXX-XX-XX
         pattern = re.compile(r'^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$')
         if not pattern.match(phone):
-            raise forms.ValidationError("Введите корректный номер телефона в формате +7 (999) 000-00-00")
+            raise forms.ValidationError("Введите корректный номер телефона в формате +7 (999) 999-99-99")
         return phone
 
